@@ -462,6 +462,239 @@
 				font-size: 10.5px;
 				color: var(--dim);
 			}
+
+			/* ---------- account switcher ---------- */
+			.acct-select {
+				background: var(--panel-2);
+				border: 1px solid var(--line);
+				color: var(--ink);
+				font-family: var(--font);
+				font-size: 13px;
+				padding: 4px 8px;
+				border-radius: 2px;
+				max-width: 150px;
+				cursor: pointer;
+			}
+			.acct-select:focus {
+				outline: none;
+				border-color: var(--amber-dim);
+			}
+
+			/* ---------- agents / dashboard ---------- */
+			.agents-backdrop {
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.55);
+				z-index: 90;
+				display: none;
+			}
+			.agents-backdrop.open {
+				display: block;
+			}
+			.agents-panel {
+				position: fixed;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				width: 340px;
+				max-width: 92vw;
+				background: var(--panel);
+				border-left: 1px solid var(--line);
+				z-index: 91;
+				transform: translateX(102%);
+				transition: transform 0.28s ease;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+			}
+			.agents-panel.open {
+				transform: translateX(0);
+			}
+			.agents-head {
+				padding: 14px 16px;
+				border-bottom: 1px solid var(--line);
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.agents-head .t {
+				font-size: 13px;
+				font-weight: 700;
+				letter-spacing: 0.08em;
+				color: var(--dim);
+			}
+			.agents-body {
+				flex: 1;
+				overflow-y: auto;
+				padding: 14px 16px 20px;
+				display: flex;
+				flex-direction: column;
+				gap: 16px;
+			}
+			.ag-summary {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+			}
+			.ag-summary .lbl {
+				font-size: 10px;
+				color: var(--dim);
+				letter-spacing: 0.08em;
+			}
+			.ag-summary .val {
+				font-size: 18px;
+				font-weight: 600;
+			}
+			.ag-summary .sub {
+				font-size: 11px;
+			}
+			.ag-chart canvas {
+				width: 100%;
+				height: 90px;
+				display: block;
+			}
+			.ag-section {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+			}
+			.ag-section .sec-title {
+				font-size: 10px;
+				color: var(--dim);
+				letter-spacing: 0.1em;
+				border-bottom: 1px solid var(--line);
+				padding-bottom: 6px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.acct-card {
+				background: var(--panel-2);
+				border: 1px solid var(--line);
+				border-radius: 3px;
+				padding: 10px 12px;
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+			}
+			.acct-card .top {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.acct-card .dot {
+				width: 10px;
+				height: 10px;
+				border-radius: 50%;
+				flex: 0 0 auto;
+			}
+			.acct-card .nm {
+				font-weight: 700;
+				font-size: 13px;
+				flex: 1;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.acct-card .id {
+				font-size: 10px;
+				color: var(--dim);
+			}
+			.acct-card .row {
+				display: flex;
+				justify-content: space-between;
+				font-size: 12px;
+			}
+			.acct-card .row .k {
+				color: var(--dim);
+			}
+			.acct-card .ctrl {
+				display: flex;
+				gap: 6px;
+				align-items: center;
+				margin-top: 2px;
+			}
+			.acct-card .ctrl button {
+				font-size: 10px;
+				padding: 3px 7px;
+			}
+			.acct-card .ctrl input[type="color"] {
+				width: 24px;
+				height: 22px;
+				padding: 0;
+				border: 1px solid var(--line);
+				background: none;
+				cursor: pointer;
+				border-radius: 2px;
+			}
+			.status-pill {
+				font-size: 9px;
+				padding: 1px 6px;
+				border-radius: 2px;
+				letter-spacing: 0.05em;
+			}
+			.status-pill.enabled {
+				background: rgba(59, 214, 113, 0.14);
+				color: var(--up);
+			}
+			.status-pill.disabled {
+				background: rgba(255, 92, 99, 0.14);
+				color: var(--down);
+			}
+			.status-pill.locked {
+				background: rgba(124, 135, 146, 0.16);
+				color: var(--dim);
+			}
+			.ag-create {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+				padding: 12px;
+				border: 1px dashed var(--line);
+				border-radius: 3px;
+			}
+			.ag-create input,
+			.ag-create select {
+				background: var(--panel-2);
+				border: 1px solid var(--line);
+				color: var(--ink);
+				font-family: var(--font);
+				font-size: 12px;
+				padding: 7px 9px;
+				border-radius: 2px;
+			}
+			.ag-feed {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				max-height: 200px;
+				overflow-y: auto;
+			}
+			.ag-trade {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 8px;
+				font-size: 12px;
+				padding: 4px 0;
+				border-bottom: 1px solid var(--line);
+			}
+			.ag-trade:last-child {
+				border-bottom: none;
+			}
+			.ag-trade .left {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				min-width: 0;
+			}
+			.ag-trade .who {
+				font-size: 10px;
+				color: var(--dim);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
 		</style>
 	</head>
 	<body>
@@ -488,6 +721,11 @@
 					<div class="sub" id="clock">—</div>
 				</div>
 				<div class="stat">
+					<div class="label">DESK</div>
+					<select id="accountSwitcher" class="acct-select" title="Select active trading desk"></select>
+					<div class="sub" id="acctMeta">—</div>
+				</div>
+				<div class="stat">
 					<div class="label">FEED</div>
 					<div
 						class="value"
@@ -497,6 +735,12 @@
 					>
 						SIM ⚙
 					</div>
+				</div>
+				<div class="stat">
+					<div class="label">AGENTS</div>
+					<button class="ghost" id="agentsBtn" style="font-size: 13px; padding: 4px 10px">
+						DASHBOARD ▸
+					</button>
 				</div>
 			</div>
 		</header>
@@ -629,6 +873,57 @@
 			</div>
 		</div>
 
+		<div class="agents-backdrop" id="agentsBackdrop"></div>
+		<aside class="agents-panel" id="agentsPanel" aria-hidden="true">
+			<div class="agents-head">
+				<div class="t">AGENTS &amp; ACCOUNTS</div>
+				<button class="ghost" id="agentsClose">✕ Close</button>
+			</div>
+			<div class="agents-body">
+				<div class="ag-summary">
+					<div>
+						<div class="lbl">COMBINED NET WORTH</div>
+						<div class="val" id="agTotal">$0.00</div>
+						<div class="sub" id="agTotalChg">—</div>
+					</div>
+					<div id="agAccountCount" style="font-size: 11px; color: var(--dim)">
+						0 desks
+					</div>
+				</div>
+
+				<div class="ag-chart">
+					<canvas id="agChart"></canvas>
+				</div>
+
+				<div class="ag-section">
+					<div class="sec-title">
+						<span>ACCOUNTS</span>
+						<button class="ghost" id="agNewToggle" style="font-size: 10px">+ new</button>
+					</div>
+					<div class="ag-create" id="agCreateForm" style="display: none">
+						<input id="agIdInput" placeholder="id (e.g. alpha)" />
+						<input id="agNameInput" placeholder="name (optional)" />
+						<select id="agCashSelect" title="Starting cash">
+							<option value="100000">$100,000</option>
+							<option value="10000">$10,000</option>
+							<option value="1000">$1,000</option>
+							<option value="0">$0</option>
+						</select>
+						<button id="agCreateBtn">Create account</button>
+						<div class="err" id="agCreateErr"></div>
+					</div>
+					<div id="agAccountList" class="ag-section"></div>
+				</div>
+
+				<div class="ag-section">
+					<div class="sec-title"><span>AGENT TRADE FEED</span></div>
+					<div class="ag-feed" id="agFeed">
+						<div class="empty">No agent trades yet.</div>
+					</div>
+				</div>
+			</div>
+		</aside>
+
 		<div class="toast-wrap" id="toastWrap"></div>
 
 		<script>
@@ -636,10 +931,23 @@
 				"use strict";
 
 				var STARTING_CASH = 100000;
-				var STORE_KEY = "paperfloor_state_v1";
+				var STORE_KEY = "paperfloor_state_v2";
+				var LEGACY_STORE_KEY = "paperfloor_state_v1";
 				var FEED_KEY = "paperfloor_feed_v1";
 				var LIVE_INTERVAL_MS = 20000;
 				var SIM_INTERVAL_MS = 2200;
+				var USER_ACCOUNT = "user"; // permanent human account, cannot be deleted
+				var MAX_ACCOUNTS = 12;
+				var ACCOUNT_COLORS = [
+					"#FFB63D", // amber
+					"#4DD8C8", // cyan
+					"#3BD671", // green
+					"#B57BFF", // purple
+					"#FF7AB8", // pink
+					"#FF9A4D", // orange
+					"#4DD8E8", // teal
+					"#6FA8FF", // blue
+				];
 
 				var feed = { live: false, apiKey: "" };
 				var BAKED_KEY = "__FINNHUB_API_KEY__"; // replaced at deploy time by the Actions workflow
@@ -727,6 +1035,9 @@
 						st.history.push(next);
 						if (st.history.length > HIST_LEN) st.history.shift();
 					});
+					pubsub.emit("price:ticked", SEED.map(function (s) {
+						return getQuote(s.sym);
+					}));
 				}
 
 				function applyLivePrice(sym, price) {
@@ -774,34 +1085,286 @@
 							updateFeedBadge();
 						}
 						renderAll();
+						pubsub.emit("price:ticked", SEED.map(function (s) {
+							return getQuote(s.sym);
+						}));
 						return anyOk;
 					});
 				}
 
-				// ---------- state ----------
-				var state = {
-					cash: STARTING_CASH,
-					holdings: {}, // sym -> {qty, avg}
-					trades: [], // {time, sym, side, qty, price}
-				};
+				// ---------- accounts ----------
+				// accounts: { id -> {id, name, cash, holdings, trades, color, status} }
+				// holdings:     sym -> {qty, avg}
+				// trades:       {time, sym, side, qty, price, realizedPnl}
+				var accounts = {};
+				var activeAccount = USER_ACCOUNT;
+				var usedColors = {};
+
+				function nextColor() {
+					for (var i = 0; i < ACCOUNT_COLORS.length; i++) {
+						if (!usedColors[ACCOUNT_COLORS[i]]) {
+							usedColors[ACCOUNT_COLORS[i]] = true;
+							return ACCOUNT_COLORS[i];
+						}
+					}
+					return ACCOUNT_COLORS[0];
+				}
+
+				function createAccount(id, opts) {
+					opts = opts || {};
+					var color = opts.color || nextColor();
+					usedColors[color] = true;
+					var initialCash =
+						typeof opts.cash === "number" && opts.cash >= 0
+							? opts.cash
+							: STARTING_CASH;
+					accounts[id] = {
+						id: id,
+						name: opts.name || id,
+						cash: initialCash,
+						initialCash: initialCash,
+						holdings: {},
+						trades: [],
+						color: color,
+						status: opts.status || "enabled",
+					};
+					pubsub.emit("account:created", { id: id, account: accounts[id] });
+					return accounts[id];
+				}
+
+				function ensureUserAccount() {
+					createAccount(USER_ACCOUNT, {
+						name: "Trader",
+						cash: STARTING_CASH,
+						status: "locked",
+					});
+				}
+
+				function setAccountColor(id, color) {
+					var a = accounts[id];
+					if (!a) return false;
+					if (usedColors[a.color]) delete usedColors[a.color];
+					a.color = color;
+					usedColors[color] = true;
+					return true;
+				}
+
+				function migrateLegacyState() {
+					try {
+						var raw = localStorage.getItem(LEGACY_STORE_KEY);
+						if (raw) {
+							var old = JSON.parse(raw);
+							if (old && typeof old.cash === "number") {
+								ensureUserAccount();
+								accounts[USER_ACCOUNT].cash = old.cash;
+								accounts[USER_ACCOUNT].initialCash = STARTING_CASH;
+								if (old.holdings) accounts[USER_ACCOUNT].holdings = old.holdings;
+								if (old.trades) accounts[USER_ACCOUNT].trades = old.trades;
+								localStorage.removeItem(LEGACY_STORE_KEY);
+								return true;
+							}
+						}
+					} catch (e) {}
+					return false;
+				}
 
 				function loadState() {
 					try {
 						var raw = localStorage.getItem(STORE_KEY);
 						if (raw) {
 							var parsed = JSON.parse(raw);
-							if (parsed && typeof parsed.cash === "number") {
-								state = parsed;
+							if (parsed && parsed.accounts) {
+								accounts = parsed.accounts;
+								if (typeof parsed.active === "string")
+									activeAccount = parsed.active;
+								usedColors = {};
+								Object.keys(accounts).forEach(function (id) {
+									var a = accounts[id];
+									if (a.color) usedColors[a.color] = true;
+									if (id === USER_ACCOUNT) a.status = "locked";
+									if (typeof a.initialCash !== "number") {
+										a.initialCash =
+											id === USER_ACCOUNT ? STARTING_CASH : a.cash || STARTING_CASH;
+									}
+								});
+								return;
 							}
 						}
 					} catch (e) {
 						/* ignore corrupt state */
 					}
+					// no v2 state — try legacy, else fresh
+					if (!migrateLegacyState()) ensureUserAccount();
+					if (!accounts[activeAccount]) activeAccount = USER_ACCOUNT;
 				}
 				function saveState() {
 					try {
-						localStorage.setItem(STORE_KEY, JSON.stringify(state));
+						localStorage.setItem(
+							STORE_KEY,
+							JSON.stringify({ accounts: accounts, active: activeAccount }),
+						);
 					} catch (e) {}
+				}
+
+				function getActiveAccount() {
+					return accounts[activeAccount] || accounts[USER_ACCOUNT];
+				}
+
+				// ---------- pubsub ----------
+				var pubsub = (function () {
+					var handlers = {};
+					return {
+						on: function (event, cb) {
+							(handlers[event] = handlers[event] || []).push(cb);
+							return function () {
+								var i = handlers[event].indexOf(cb);
+								if (i >= 0) handlers[event].splice(i, 1);
+							};
+						},
+						off: function (event, cb) {
+							var list = handlers[event];
+							if (!list) return;
+							var i = list.indexOf(cb);
+							if (i >= 0) list.splice(i, 1);
+						},
+						emit: function (event) {
+							var list = handlers[event];
+							if (!list) return;
+							var args = Array.prototype.slice.call(arguments, 1);
+							list.slice().forEach(function (cb) {
+								try {
+									cb.apply(null, args);
+								} catch (e) {}
+							});
+						},
+						clear: function (event) {
+							if (event) delete handlers[event];
+							else handlers = {};
+						},
+					};
+				})();
+
+				// ---------- trading engine ----------
+				// All buy/sell execution flows through here — shared by the UI and the API.
+				function executeBuy(options) {
+					options = options || {};
+					var acct = accounts[options.account || activeAccount];
+					if (!acct) return errResult("Unknown account");
+					if (acct.status === "disabled")
+						return errResult("Account is disabled from trading");
+					var sym = options.symbol;
+					var st = stocks[sym];
+					if (!st) return errResult("Unknown symbol");
+					var qty = Math.floor(Number(options.qty));
+					if (!qty || qty <= 0) return errResult("Quantity must be above zero");
+					var cost = qty * st.price;
+					if (cost > acct.cash)
+						return errResult("Not enough cash for that size");
+					var h = acct.holdings[sym] || { qty: 0, avg: 0 };
+					var newQty = h.qty + qty;
+					h.avg = (h.avg * h.qty + cost) / newQty;
+					h.qty = newQty;
+					acct.holdings[sym] = h;
+					acct.cash -= cost;
+					return recordTrade(acct, sym, "BUY", qty, st.price, 0);
+				}
+
+				function executeSell(options) {
+					options = options || {};
+					var acct = accounts[options.account || activeAccount];
+					if (!acct) return errResult("Unknown account");
+					if (acct.status === "disabled")
+						return errResult("Account is disabled from trading");
+					var sym = options.symbol;
+					var st = stocks[sym];
+					if (!st) return errResult("Unknown symbol");
+					var qty = Math.floor(Number(options.qty));
+					if (!qty || qty <= 0) return errResult("Quantity must be above zero");
+					var h = acct.holdings[sym];
+					if (!h || h.qty < qty)
+						return errResult("You don't hold that many shares");
+					var realized = (st.price - h.avg) * qty;
+					h.qty -= qty;
+					acct.cash += qty * st.price;
+					return recordTrade(acct, sym, "SELL", qty, st.price, realized);
+				}
+
+				function recordTrade(acct, sym, side, qty, price, realizedPnl) {
+					var trade = {
+						time: Date.now(),
+						sym: sym,
+						side: side,
+						qty: qty,
+						price: price,
+					};
+					if (side === "SELL") trade.realizedPnl = realizedPnl;
+					acct.trades.push(trade);
+					saveState();
+					pubsub.emit("trade:executed", {
+						account: acct.id,
+						trade: trade,
+						accountObj: acct,
+					});
+					return { ok: true, trade: trade, error: null };
+				}
+
+				function errResult(msg) {
+					return { ok: false, trade: null, error: msg };
+				}
+
+				// ---------- quotes / portfolio helpers ----------
+				function getQuote(sym) {
+					var st = stocks[sym];
+					if (!st) return null;
+					return {
+						sym: st.sym,
+						name: st.name,
+						price: st.price,
+						change: st.lastChangePct,
+						history: st.history.slice(),
+					};
+				}
+
+				function getPortfolio(id) {
+					var acct = accounts[id];
+					if (!acct) return null;
+					var holdings = [],
+						cash = acct.cash,
+						openValue = 0,
+						unrealized = 0,
+						realized = 0;
+					Object.keys(acct.holdings).forEach(function (sym) {
+						var h = acct.holdings[sym];
+						if (!h || h.qty <= 0) return;
+						var st = stocks[sym];
+						var value = h.qty * st.price;
+						var pl = (st.price - h.avg) * h.qty;
+						openValue += value;
+						unrealized += pl;
+						holdings.push({
+							sym: sym,
+							name: st.name,
+							qty: h.qty,
+							avg: h.avg,
+							price: st.price,
+							value: value,
+							pl: pl,
+							plPct: h.avg ? pl / (h.avg * h.qty) : 0,
+						});
+					});
+					acct.trades.forEach(function (t) {
+						if (t.side === "SELL" && t.realizedPnl) realized += t.realizedPnl;
+					});
+					var netWorth = cash + openValue;
+					return {
+						account: id,
+						cash: cash,
+						netWorth: netWorth,
+						openValue: openValue,
+						unrealized: unrealized,
+						realized: realized,
+						holdings: holdings,
+					};
 				}
 
 				function fmt(n) {
@@ -818,9 +1381,11 @@
 				}
 
 				function portfolioValue() {
-					var v = state.cash;
-					Object.keys(state.holdings).forEach(function (sym) {
-						var h = state.holdings[sym];
+					var acct = getActiveAccount();
+					if (!acct) return 0;
+					var v = acct.cash;
+					Object.keys(acct.holdings).forEach(function (sym) {
+						var h = acct.holdings[sym];
 						if (h.qty > 0 && stocks[sym]) v += h.qty * stocks[sym].price;
 					});
 					return v;
@@ -916,13 +1481,15 @@
 				}
 
 				function renderHoldings() {
-					var syms = Object.keys(state.holdings).filter(function (s) {
-						return state.holdings[s].qty > 0;
+					var acct = getActiveAccount();
+					if (!acct) return;
+					var syms = Object.keys(acct.holdings).filter(function (s) {
+						return acct.holdings[s].qty > 0;
 					});
 					holdBody.innerHTML = "";
 					holdEmpty.style.display = syms.length ? "none" : "block";
 					syms.forEach(function (sym) {
-						var h = state.holdings[sym];
+						var h = acct.holdings[sym];
 						var st = stocks[sym];
 						var value = h.qty * st.price;
 						var pl = (st.price - h.avg) * h.qty;
@@ -951,11 +1518,13 @@
 				}
 
 				function renderLog() {
-					if (!state.trades.length) {
+					var acct = getActiveAccount();
+					if (!acct) return;
+					if (!acct.trades.length) {
 						logList.innerHTML = '<div class="empty">No trades yet.</div>';
 						return;
 					}
-					var rows = state.trades
+					var rows = acct.trades
 						.slice()
 						.reverse()
 						.slice(0, 40)
@@ -988,11 +1557,14 @@
 				}
 
 				function renderHeader() {
+					var acct = getActiveAccount();
+					if (!acct) return;
 					var nw = portfolioValue();
 					document.getElementById("netWorth").textContent = fmt(nw);
-					document.getElementById("cashVal").textContent = fmt(state.cash);
-					var delta = nw - STARTING_CASH;
-					var pct = delta / STARTING_CASH;
+					document.getElementById("cashVal").textContent = fmt(acct.cash);
+					var base = acct.initialCash || STARTING_CASH;
+					var delta = nw - base;
+					var pct = delta / base;
 					var el = document.getElementById("netChange");
 					el.textContent =
 						(delta >= 0 ? "+" : "") + fmt(delta) + " (" + fmtPct(pct) + ")";
@@ -1047,6 +1619,8 @@
 					renderLog();
 					renderHeader();
 					renderDetail();
+					renderAccountSwitcher();
+					renderDashboard();
 					saveState();
 				}
 
@@ -1064,6 +1638,7 @@
 
 				function openTrade(sym, side) {
 					tradeCtx = { sym: sym, side: side };
+					var acct = getActiveAccount();
 					var st = stocks[sym];
 					mSym.textContent = sym;
 					mSide.textContent = side;
@@ -1072,9 +1647,9 @@
 						side === "BUY" ? "rgba(59,214,113,0.12)" : "rgba(255,92,99,0.12)";
 					mPrice.textContent = st.price.toFixed(2);
 					if (side === "BUY") {
-						mAvail.textContent = fmt(state.cash) + " cash";
+						mAvail.textContent = fmt(acct.cash) + " cash";
 					} else {
-						var qty = state.holdings[sym] ? state.holdings[sym].qty : 0;
+						var qty = acct.holdings[sym] ? acct.holdings[sym].qty : 0;
 						mAvail.textContent = qty + " shares held";
 					}
 					qtyInput.value = "1";
@@ -1105,11 +1680,12 @@
 				qtyInput.addEventListener("input", updateTotal);
 
 				document.getElementById("maxBtn").onclick = function () {
+					var acct = getActiveAccount();
 					var st = stocks[tradeCtx.sym];
 					if (tradeCtx.side === "BUY") {
-						qtyInput.value = Math.max(1, Math.floor(state.cash / st.price));
+						qtyInput.value = Math.max(1, Math.floor(acct.cash / st.price));
 					} else {
-						var h = state.holdings[tradeCtx.sym];
+						var h = acct.holdings[tradeCtx.sym];
 						qtyInput.value = h ? h.qty : 0;
 					}
 					updateTotal();
@@ -1124,40 +1700,17 @@
 					var qty = parseInt(qtyInput.value, 10) || 0;
 					var sym = tradeCtx.sym,
 						side = tradeCtx.side;
-					var st = stocks[sym];
-					if (qty <= 0) {
-						mErr.textContent = "Enter a quantity above zero.";
+					var res;
+					if (side === "BUY") {
+						res = executeBuy({ account: activeAccount, symbol: sym, qty: qty });
+					} else {
+						res = executeSell({ account: activeAccount, symbol: sym, qty: qty });
+					}
+					if (!res.ok) {
+						mErr.textContent = res.error;
 						return;
 					}
-
-					if (side === "BUY") {
-						var cost = qty * st.price;
-						if (cost > state.cash) {
-							mErr.textContent = "Not enough cash for that size.";
-							return;
-						}
-						var h = state.holdings[sym] || { qty: 0, avg: 0 };
-						var newQty = h.qty + qty;
-						h.avg = (h.avg * h.qty + cost) / newQty;
-						h.qty = newQty;
-						state.holdings[sym] = h;
-						state.cash -= cost;
-					} else {
-						var h2 = state.holdings[sym];
-						if (!h2 || h2.qty < qty) {
-							mErr.textContent = "You don't hold that many shares.";
-							return;
-						}
-						h2.qty -= qty;
-						state.cash += qty * st.price;
-					}
-					state.trades.push({
-						time: Date.now(),
-						sym: sym,
-						side: side,
-						qty: qty,
-						price: st.price,
-					});
+					var st = stocks[sym];
 					closeTrade();
 					toast(side + " " + qty + " " + sym + " @ " + st.price.toFixed(2));
 					renderAll();
@@ -1262,17 +1815,520 @@
 				});
 
 				document.getElementById("resetBtn").onclick = function () {
+					var acct = getActiveAccount();
+					if (!acct) return;
 					if (
 						!confirm(
-							"Reset your desk? This wipes cash, holdings and trade history.",
+							"Reset this desk (" +
+								acct.name +
+								")? This wipes its cash, holdings and trade history.",
 						)
 					)
 						return;
-					state = { cash: STARTING_CASH, holdings: {}, trades: [] };
-					initStocks();
-					toast("Desk reset. Fresh $100,000.");
+					acct.cash = acct.initialCash || STARTING_CASH;
+					acct.holdings = {};
+					acct.trades = [];
+					if (acct.id === USER_ACCOUNT) {
+						initStocks();
+						toast("Trader desk reset. Fresh $" + acct.cash.toLocaleString() + ".");
+					} else {
+						toast(acct.name + " account reset to $" + acct.cash.toLocaleString() + ".");
+					}
 					renderAll();
 				};
+
+				// ---------- account switcher ----------
+				var accountSwitcher = document.getElementById("accountSwitcher");
+				var acctMeta = document.getElementById("acctMeta");
+
+				function renderAccountSwitcher() {
+					if (!accountSwitcher) return;
+					var prev = activeAccount;
+					accountSwitcher.innerHTML = "";
+					Object.keys(accounts).forEach(function (id) {
+						var a = accounts[id];
+						var opt = document.createElement("option");
+						opt.value = id;
+						opt.textContent = a.name + (a.status === "disabled" ? " (off)" : "");
+						opt.style.color = a.color;
+						if (id === activeAccount) opt.selected = true;
+						accountSwitcher.appendChild(opt);
+					});
+					if (!accounts[activeAccount]) activeAccount = USER_ACCOUNT;
+					if (prev !== activeAccount) accountSwitcher.value = activeAccount;
+					var cur = accounts[activeAccount];
+					acctMeta.textContent = cur ? cur.id : "";
+				}
+
+				accountSwitcher.addEventListener("change", function () {
+					activeAccount = accountSwitcher.value;
+					if (!accounts[activeAccount]) activeAccount = USER_ACCOUNT;
+					saveState();
+					renderAll();
+				});
+
+				// ---------- dashboard ----------
+				var agentsBackdrop = document.getElementById("agentsBackdrop");
+				var agentsPanel = document.getElementById("agentsPanel");
+				var agChart = document.getElementById("agChart");
+				var agAccountList = document.getElementById("agAccountList");
+				var agFeed = document.getElementById("agFeed");
+				var netWorthHistory = []; // rolling combined net worth
+				var NW_HIST_CAP = 80;
+
+				function combinedNetWorth() {
+					var total = 0;
+					Object.keys(accounts).forEach(function (id) {
+						total += accounts[id].cash;
+						var h = accounts[id].holdings;
+						Object.keys(h).forEach(function (sym) {
+							if (h[sym].qty > 0 && stocks[sym])
+								total += h[sym].qty * stocks[sym].price;
+						});
+					});
+					return total;
+				}
+
+				function drawAgChart() {
+					var canvas = agChart;
+					if (!canvas) return;
+					var dpr = window.devicePixelRatio || 1;
+					var rect = canvas.getBoundingClientRect();
+					canvas.width = rect.width * dpr;
+					canvas.height = 90 * dpr;
+					var ctx = canvas.getContext("2d");
+					ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+					var w = rect.width,
+						h = 90;
+					ctx.clearRect(0, 0, w, h);
+					var hist = netWorthHistory;
+					if (hist.length < 2) return;
+					ctx.strokeStyle = "#1D242B";
+					ctx.lineWidth = 1;
+					for (var g = 0; g <= 2; g++) {
+						var gy = 10 + (g * (h - 20)) / 2;
+						ctx.beginPath();
+						ctx.moveTo(0, gy);
+						ctx.lineTo(w, gy);
+						ctx.stroke();
+					}
+					var min = Math.min.apply(null, hist),
+						max = Math.max.apply(null, hist);
+					var range = max - min || 1;
+					var positive = hist[hist.length - 1] >= hist[0];
+					ctx.beginPath();
+					hist.forEach(function (p, i) {
+						var x = (i / (hist.length - 1)) * w;
+						var y = 10 + (h - 20) - ((p - min) / range) * (h - 20);
+						if (i === 0) ctx.moveTo(x, y);
+						else ctx.lineTo(x, y);
+					});
+					ctx.strokeStyle = positive ? "#3BD671" : "#FF5C63";
+					ctx.lineWidth = 1.8;
+					ctx.stroke();
+				}
+
+				function renderDashboard() {
+					var total = combinedNetWorth();
+					netWorthHistory.push(total);
+					if (netWorthHistory.length > NW_HIST_CAP) netWorthHistory.shift();
+					var totalEl = document.getElementById("agTotal");
+					var totalChg = document.getElementById("agTotalChg");
+					if (totalEl) {
+						totalEl.textContent = fmt(total);
+						var base = netWorthHistory[0] || total;
+						var del = total - base;
+						totalChg.textContent =
+							(del >= 0 ? "+" : "") +
+							fmt(del) +
+							" (" +
+							fmtPct(base ? del / base : 0) +
+							") serving " +
+							Object.keys(accounts).length +
+							" desk" +
+							(Object.keys(accounts).length === 1 ? "" : "s");
+						totalChg.className = "sub " + (del >= 0 ? "pos" : "neg");
+					}
+					drawAgChart();
+					renderAccountList();
+					renderAgentFeed();
+				}
+
+				function renderAccountList() {
+					if (!agAccountList) return;
+					agAccountList.innerHTML = "";
+					Object.keys(accounts).forEach(function (id) {
+						var a = accounts[id];
+						var p = getPortfolio(id);
+						if (!p) return;
+						var base = a.initialCash || STARTING_CASH;
+						var del = p.netWorth - base;
+						var delCls = del >= 0 ? "pos" : "neg";
+						var card = document.createElement("div");
+						card.className = "acct-card";
+						card.innerHTML =
+							'<div class="top">' +
+							'<span class="dot" style="background:' +
+							a.color +
+							'"></span>' +
+							'<span class="nm">' +
+							escapeHtml(a.name) +
+							'</span>' +
+							'<span class="status-pill ' +
+							a.status +
+							'">' +
+							a.status +
+							"</span>" +
+							'<span class="id">' +
+							escapeHtml(id) +
+							"</span>" +
+							"</div>" +
+							'<div class="row"><span class="k">Net worth</span><span>' +
+							fmt(p.netWorth) +
+							"</span></div>" +
+							'<div class="row"><span class="k">Cash</span><span>' +
+							fmt(p.cash) +
+							"</span></div>" +
+							'<div class="row"><span class="k">P/L</span><span class="' +
+							delCls +
+							'">' +
+							(del >= 0 ? "+" : "") +
+							fmt(del) +
+							" (" +
+							fmtPct(base ? del / base : 0) +
+							")</span></div>" +
+							'<div class="row"><span class="k">Positions</span><span>' +
+							p.holdings.length +
+							"</span></div>";
+						var ctrl = document.createElement("div");
+						ctrl.className = "ctrl";
+						if (id !== USER_ACCOUNT) {
+							var statusBtn = document.createElement("button");
+							statusBtn.className = "ghost";
+							statusBtn.textContent =
+								a.status === "disabled" ? "Enable" : "Disable";
+							statusBtn.onclick = function () {
+								a.status = a.status === "disabled" ? "enabled" : "disabled";
+								saveState();
+								renderDashboard();
+								renderAll();
+							};
+							ctrl.appendChild(statusBtn);
+							var delBtn = document.createElement("button");
+							delBtn.className = "ghost";
+							delBtn.textContent = "Delete";
+							delBtn.style.color = "var(--down)";
+							delBtn.onclick = function () {
+								if (!confirm("Delete account '" + id + "'? This cannot be undone."))
+									return;
+								delete accounts[id];
+								delete usedColors[a.color];
+								if (activeAccount === id) activeAccount = USER_ACCOUNT;
+								saveState();
+								pubsub.emit("account:deleted", { id: id });
+								renderDashboard();
+								renderAll();
+							};
+							ctrl.appendChild(delBtn);
+						}
+						var colorPick = document.createElement("input");
+						colorPick.type = "color";
+						colorPick.value = a.color;
+						colorPick.title = "Set account color";
+						colorPick.oninput = function () {
+							setAccountColor(id, this.value);
+							renderDashboard();
+							renderAccountSwitcher();
+							saveState();
+						};
+						ctrl.appendChild(colorPick);
+						var activateBtn = document.createElement("button");
+						activateBtn.className = "ghost";
+						activateBtn.textContent = activeAccount === id ? "Active" : "Activate";
+						activateBtn.disabled = activeAccount === id;
+						activateBtn.onclick = function () {
+							activeAccount = id;
+							saveState();
+							renderAll();
+						};
+						ctrl.appendChild(activateBtn);
+						card.appendChild(ctrl);
+						agAccountList.appendChild(card);
+					});
+				}
+
+				function renderAgentFeed() {
+					if (!agFeed) return;
+					var rows = [];
+					var count = 0;
+					Object.keys(accounts).forEach(function (id) {
+						if (id === USER_ACCOUNT) return;
+						var a = accounts[id];
+						(a.trades || []).forEach(function (t) {
+							count++;
+							rows.push({
+								time: t.time,
+								account: a,
+								trade: t,
+							});
+						});
+					});
+					rows.sort(function (x, y) {
+						return y.time - x.time;
+					});
+					rows = rows.slice(0, 30);
+					if (!count) {
+						agFeed.innerHTML = '<div class="empty">No agent trades yet.</div>';
+						return;
+					}
+					agFeed.innerHTML = "";
+					rows.forEach(function (r) {
+						var a = r.account,
+							t = r.trade;
+						var d = new Date(t.time);
+						var timeStr = d.toLocaleTimeString([], {
+							hour: "2-digit",
+							minute: "2-digit",
+						});
+						var row = document.createElement("div");
+						row.className = "ag-trade";
+						var tagCls = t.side === "BUY" ? "pos" : "neg";
+						row.innerHTML =
+							'<div class="left">' +
+							'<span class="dot" style="background:' +
+							a.color +
+							';width:8px;height:8px;border-radius:50%;flex:0 0 auto"></span>' +
+							'<span class="tag ' +
+							t.side +
+							'">' +
+							t.side +
+							"</span> " +
+							t.qty +
+							" " +
+							escapeHtml(t.sym) +
+							" @ " +
+							t.price.toFixed(2) +
+							'<span class="who">· ' +
+							escapeHtml(a.name) +
+							"</span>" +
+							"</div>" +
+							'<span class="time">' +
+							timeStr +
+							"</span>";
+						agFeed.appendChild(row);
+					});
+				}
+
+				function escapeHtml(s) {
+					return String(s).replace(/[&<>"']/g, function (c) {
+						return {
+							"&": "&amp;",
+							"<": "&lt;",
+							">": "&gt;",
+							'"': "&quot;",
+							"'": "&#39;",
+						}[c];
+					});
+				}
+
+				function openAgents() {
+					agentsBackdrop.classList.add("open");
+					agentsPanel.classList.add("open");
+					agentsPanel.setAttribute("aria-hidden", "false");
+					renderDashboard();
+				}
+				function closeAgents() {
+					agentsBackdrop.classList.remove("open");
+					agentsPanel.classList.remove("open");
+					agentsPanel.setAttribute("aria-hidden", "true");
+				}
+				document.getElementById("agentsBtn").onclick = openAgents;
+				document.getElementById("agentsClose").onclick = closeAgents;
+				agentsBackdrop.addEventListener("click", closeAgents);
+
+				document.getElementById("agNewToggle").onclick = function () {
+					var form = document.getElementById("agCreateForm");
+					form.style.display = form.style.display === "none" ? "flex" : "none";
+					document.getElementById("agCreateErr").textContent = "";
+				};
+				document.getElementById("agCreateBtn").onclick = function () {
+					var id = document
+						.getElementById("agIdInput")
+						.value.trim()
+						.replace(/[^a-zA-Z0-9_-]/g, "")
+						.toLowerCase();
+					var name = document.getElementById("agNameInput").value.trim();
+					var cash = parseInt(
+						document.getElementById("agCashSelect").value,
+						10,
+					);
+					var errEl = document.getElementById("agCreateErr");
+					if (!id) {
+						errEl.textContent = "Enter an id (letters, numbers, - or _).";
+						return;
+					}
+					if (accounts[id]) {
+						errEl.textContent = "That id already exists.";
+						return;
+					}
+					if (Object.keys(accounts).length >= MAX_ACCOUNTS) {
+						errEl.textContent = "Account limit reached (" + MAX_ACCOUNTS + ").";
+						return;
+					}
+					createAccount(id, { name: name || id, cash: cash });
+					saveState();
+					document.getElementById("agIdInput").value = "";
+					document.getElementById("agNameInput").value = "";
+					errEl.textContent = "";
+					document.getElementById("agNewToggle").click();
+					toast("Account '" + id + "' created.");
+					renderDashboard();
+					renderAccountSwitcher();
+				};
+
+				// ---------- public API ----------
+				window.paperfloor = {
+					getQuotes: function () {
+						return SEED.map(function (s) {
+							return getQuote(s.sym);
+						}).filter(Boolean);
+					},
+					getQuote: getQuote,
+					getPrices: function () {
+						return SEED.map(function (s) {
+							return getQuote(s.sym);
+						}).filter(Boolean);
+					},
+					createAccount: function (options) {
+						options = options || {};
+						if (!options.id) return errResult("id is required");
+						if (accounts[options.id]) return errResult("Account id already exists");
+						if (Object.keys(accounts).length >= MAX_ACCOUNTS)
+							return errResult("Account limit reached (" + MAX_ACCOUNTS + ")");
+						var acct = createAccount(options.id, {
+							name: options.name,
+							cash: options.cash,
+							status: options.status,
+						});
+						saveState();
+						renderDashboard();
+						renderAccountSwitcher();
+						return { ok: true, account: acct, error: null };
+					},
+					deleteAccount: function (options) {
+						options = options || {};
+						var id = options.account || options.id;
+						if (id === USER_ACCOUNT) return errResult("Cannot delete the user account");
+						var victim = accounts[id];
+						if (!victim) return errResult("Unknown account");
+						delete accounts[id];
+						if (victim.color) delete usedColors[victim.color];
+						if (activeAccount === id) activeAccount = USER_ACCOUNT;
+						saveState();
+						pubsub.emit("account:deleted", { id: id });
+						renderDashboard();
+						renderAccountSwitcher();
+						renderAll();
+						return { ok: true, error: null };
+					},
+					getAccounts: function () {
+						return Object.keys(accounts).map(function (id) {
+							var a = accounts[id];
+							return {
+								id: id,
+								name: a.name,
+								cash: a.cash,
+								color: a.color,
+								status: a.status,
+								netWorth: combinedAccountNW(id),
+							};
+						});
+					},
+					setAccountColor: function (options) {
+						options = options || {};
+						return setAccountColor(options.account, options.color);
+					},
+					setAccountStatus: function (options) {
+						options = options || {};
+						var a = accounts[options.account];
+						if (!a) return false;
+						if (options.account === USER_ACCOUNT) return false;
+						a.status = options.status === "enabled" ? "enabled" : "disabled";
+						saveState();
+						renderDashboard();
+						renderAll();
+						return true;
+					},
+					buy: function (options) {
+						var res = executeBuy(options);
+						if (res.ok) {
+							saveState();
+							renderAll();
+						}
+						return res;
+					},
+					sell: function (options) {
+						var res = executeSell(options);
+						if (res.ok) {
+							saveState();
+							renderAll();
+						}
+						return res;
+					},
+					getPortfolio: function (options) {
+						options = options || {};
+						return getPortfolio(options.account || activeAccount);
+					},
+					getNetWorth: function (options) {
+						options = options || {};
+						var p = getPortfolio(options.account || activeAccount);
+						return p ? p.netWorth : null;
+					},
+					getTradeHistory: function (options) {
+						options = options || {};
+						var a = accounts[options.account || activeAccount];
+						if (!a) return [];
+						return a.trades.slice().reverse();
+					},
+					on: function (event, cb) {
+						return pubsub.on(event, cb);
+					},
+					off: function (event, cb) {
+						pubsub.off(event, cb);
+					},
+					setActiveAccount: function (options) {
+						options = options || {};
+						if (!accounts[options.account]) return false;
+						activeAccount = options.account;
+						saveState();
+						renderAll();
+						return true;
+					},
+					resetAccount: function (options) {
+						options = options || {};
+						var a = accounts[options.account];
+						if (!a) return errResult("Unknown account");
+						a.cash = a.initialCash || STARTING_CASH;
+						a.holdings = {};
+						a.trades = [];
+						saveState();
+						renderDashboard();
+						renderAll();
+						return { ok: true, error: null };
+					},
+					version: "1.0.0",
+				};
+
+				function combinedAccountNW(id) {
+					var a = accounts[id];
+					if (!a) return 0;
+					var v = a.cash;
+					Object.keys(a.holdings).forEach(function (sym) {
+						if (a.holdings[sym].qty > 0 && stocks[sym])
+							v += a.holdings[sym].qty * stocks[sym].price;
+					});
+					return v;
+				}
 
 				function tickClock() {
 					document.getElementById("clock").textContent =
@@ -1289,7 +2345,10 @@
 				setInterval(tickClock, 1000);
 				restartPriceLoop();
 				if (feed.live) fetchLiveQuotes();
-				window.addEventListener("resize", renderDetail);
+				window.addEventListener("resize", function () {
+					renderDetail();
+					drawAgChart();
+				});
 
 				if ("serviceWorker" in navigator) {
 					navigator.serviceWorker.register("sw.js").catch(function () {});

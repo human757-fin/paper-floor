@@ -871,6 +871,24 @@
 						<div class="empty">No trades yet.</div>
 					</div>
 				</div>
+
+				<div class="panel" id="agentPanel" style="display: none">
+					<h2>
+						AGENT <span id="agentPanelId">qwen3</span>
+						<span class="status-pill" id="agentPill" style="cursor: default">idle</span>
+					</h2>
+					<div class="agent-ctl">
+						<button class="ghost" id="agentStartBtn">▶ Start</button>
+						<button class="ghost" id="agentStopBtn">■ Stop</button>
+						<button class="ghost" id="agentOnceBtn">↻ Run once</button>
+					</div>
+					<div id="agentStatusTxt" class="sub" style="padding: 4px 0 8px">
+						Agent desk selected. Start it to let the local model trade this account.
+					</div>
+					<div class="log-list" id="agentLog">
+						<div class="empty">Agent not running.</div>
+					</div>
+				</div>
 			</div>
 		</main>
 
@@ -973,7 +991,7 @@
 
 				<div class="ag-section">
 					<div class="sec-title">
-						<span>ACCOUNTS</span>
+						<span>HUMAN ACCOUNTS</span>
 						<button class="ghost" id="agNewToggle" style="font-size: 10px">+ new</button>
 					</div>
 					<div class="ag-create" id="agCreateForm" style="display: none">
@@ -998,7 +1016,12 @@
 						<button id="agCreateBtn">Create account</button>
 						<div class="err" id="agCreateErr"></div>
 					</div>
-					<div id="agAccountList" class="ag-section"></div>
+					<div id="agHumansList"></div>
+				</div>
+
+				<div class="ag-section">
+					<div class="sec-title"><span>AGENTS</span></div>
+					<div id="agAgentsList"></div>
 				</div>
 
 				<div class="ag-section">
@@ -1092,6 +1115,9 @@
 				];
 
 				var HIST_LEN = 60;
+				var CANDLE_TICKS = 6; // price ticks per candle
+				var candles = {}; // sym -> [{o,h,l,c,t}] closed candles
+				var forming = {}; // sym -> {o,h,l,c,n,t} candle being built
 				var stocks = {}; // sym -> {sym,name,price,vol,base,history[],lastChangePct}
 				var selected = "AAPL";
 
@@ -1101,6 +1127,36 @@
 					while (u === 0) u = Math.random();
 					while (v === 0) v = Math.random();
 					return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+				}
+
+				function recordCandle(sym, price) {
+					var f =
+						forming[sym] ||
+						(forming[sym] = {
+							o: price,
+							h: price,
+							l: price,
+							c: price,
+							n: 0,
+							t: Date.now(),
+						});
+					f.h = Math.max(f.h, price);
+					f.l = Math.min(f.l, price);
+					f.c = price;
+					f.n++;
+					if (f.n >= CANDLE_TICKS) {
+						var list = candles[sym] || (candles[sym] = []);
+						list.push({ o: f.o, h: f.h, l: f.l, c: f.c, t: f.t });
+						if (list.length > 80) list.shift();
+						forming[sym] = {
+							o: price,
+							h: price,
+							l: price,
+							c: price,
+							n: 0,
+							t: Date.now(),
+						};
+					}
 				}
 
 				function initStocks() {
@@ -1128,6 +1184,7 @@
 						st.price = next;
 						st.history.push(next);
 						if (st.history.length > HIST_LEN) st.history.shift();
+						recordCandle(sym, next);
 					});
 					pubsub.emit("price:ticked", SEED.map(function (s) {
 						return getQuote(s.sym);
@@ -1141,6 +1198,7 @@
 					st.price = price;
 					st.history.push(price);
 					if (st.history.length > HIST_LEN) st.history.shift();
+					recordCandle(sym, price);
 				}
 
 				function fetchLiveQuotes() {
@@ -1682,6 +1740,106 @@
 					logList.innerHTML = rows;
 				}
 
+				function updateAgentPanel() {
+					var panel = document.getElementById("agentPanel");
+					if (!panel) return;
+					var acct = getActiveAccount();
+					var isAgent = !!(acct && acct.kind === "agent");
+					panel.style.display = isAgent ? "" : "none";
+					if (!isAgent) return;
+					var q = window.qwenAgent;
+					var idEl = document.getElementById("agentPanelId");
+					if (idEl && q) idEl.textContent = (q.config && q.config.agentId) || "qwen3";
+					if (!q) {
+						document.getElementById("agentLog").innerHTML =
+							'<div class="empty">Agent module not loaded.</div>';
+						document.getElementById("agentPill").textContent = "unloaded";
+						document.getElementById("agentPill").className = "status-pill";
+						return;
+					}
+					var st = q.status();
+					var pill = document.getElementById("agentPill");
+					pill.textContent = st.running ? "running" : "idle";
+					pill.className = "status-pill " + (st.running ? "enabled" : "disabled");
+					var txt = document.getElementById("agentStatusTxt");
+					var cfg = q.config;
+					txt.innerHTML =
+						cfg.model +
+						" · every " +
+						Math.round((cfg.intervalMs || 45000) / 1000) +
+						"s · account <b>" +
+						escapeHtml(cfg.agentId || "qwen3") +
+						"</b>" +
+						(st.lastDecision
+							? ' · last: ' +
+								escapeHtml(
+									(st.lastDecision.decision && st.lastDecision.decision.action || "")
+										.toUpperCase() +
+										(st.lastDecision.decision &&
+										st.lastDecision.decision.symbol
+											? " " +
+												st.lastDecision.decision.symbol +
+												" x" +
+												st.lastDecision.decision.qty
+											: ""),
+								)
+							: "") +
+						(st.startedAt
+							? " · since " +
+								new Date(st.startedAt).toLocaleTimeString([], {
+									hour: "2-digit",
+									minute: "2-digit",
+								})
+							: "");
+					var log = document.getElementById("agentLog");
+					if (!st.logs.length) {
+						log.innerHTML = '<div class="empty">Agent not running.</div>';
+					} else {
+						log.innerHTML = st.logs
+							.slice(-12)
+							.map(function (l) {
+								var t = new Date(l.t);
+								return (
+									'<div class="log-row"><span class="tgt ' +
+									l.kind +
+									'">' +
+									escapeHtml(l.msg) +
+									"</span><span class=\"time\">" +
+									t.toLocaleTimeString([], {
+										hour: "2-digit",
+										minute: "2-digit",
+									}) +
+									"</span></div>"
+								);
+							})
+							.join("");
+					}
+				}
+
+				(function () {
+					var startBtn = document.getElementById("agentStartBtn");
+					var stopBtn = document.getElementById("agentStopBtn");
+					var onceBtn = document.getElementById("agentOnceBtn");
+					function refresh() {
+						setTimeout(updateAgentPanel, 700);
+					}
+					if (startBtn)
+						startBtn.onclick = function () {
+							if (window.qwenAgent) window.qwenAgent.start();
+							refresh();
+						};
+					if (stopBtn)
+						stopBtn.onclick = function () {
+							if (window.qwenAgent) window.qwenAgent.stop();
+							refresh();
+						};
+					if (onceBtn)
+						onceBtn.onclick = function () {
+							if (window.qwenAgent)
+								window.qwenAgent.runOnce().finally(refresh);
+						};
+				})();
+
 				function renderHeader() {
 					var acct = getActiveAccount();
 					if (!acct) return;
@@ -1711,9 +1869,30 @@
 						h = 110;
 					ctx.clearRect(0, 0, w, h);
 					var hist = stocks[selected].history;
-					if (hist.length < 2) return;
-					var min = Math.min.apply(null, hist),
+					// closed candles + the one still forming
+					var f = forming[selected];
+					var series = (candles[selected] || []).concat(
+						f ? [{ o: f.o, h: f.h, l: f.l, c: f.c }] : [],
+					);
+					if (!series.length && hist.length < 2) return;
+					var min, max;
+					if (series.length) {
+						min = Math.min.apply(
+							null,
+							series.map(function (c) {
+								return c.l;
+							}),
+						);
+						max = Math.max.apply(
+							null,
+							series.map(function (c) {
+								return c.h;
+							}),
+						);
+					} else {
+						min = Math.min.apply(null, hist);
 						max = Math.max.apply(null, hist);
+					}
 					var range = max - min || 1;
 					// gridlines
 					ctx.strokeStyle = "#1D242B";
@@ -1725,17 +1904,43 @@
 						ctx.lineTo(w, gy);
 						ctx.stroke();
 					}
-					var positive = hist[hist.length - 1] >= hist[0];
-					ctx.beginPath();
-					hist.forEach(function (p, i) {
-						var x = (i / (hist.length - 1)) * w;
-						var y = 10 + (h - 20) - ((p - min) / range) * (h - 20);
-						if (i === 0) ctx.moveTo(x, y);
-						else ctx.lineTo(x, y);
+					function yFor(p) {
+						return 10 + (h - 20) - ((p - min) / range) * (h - 20);
+					}
+					var UP = "#3BD671",
+						DOWN = "#FF5C63";
+					if (!series.length) {
+						// fallback line until the first candle closes
+						ctx.beginPath();
+						hist.forEach(function (p, i) {
+							var x = (i / (hist.length - 1)) * w;
+							var y = yFor(p);
+							if (i === 0) ctx.moveTo(x, y);
+							else ctx.lineTo(x, y);
+						});
+						ctx.strokeStyle = UP;
+						ctx.lineWidth = 1.8;
+						ctx.stroke();
+						return;
+					}
+					var slot = w / series.length;
+					var bodyW = Math.max(2, slot * 0.6);
+					series.forEach(function (c, i) {
+						var x = slot / 2 + i * slot;
+						var col = c.c >= c.o ? UP : DOWN;
+						var yH = yFor(c.h),
+							yL = yFor(c.l),
+							yO = yFor(c.o),
+							yC = yFor(c.c);
+						ctx.strokeStyle = col;
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.moveTo(x, yH);
+						ctx.lineTo(x, yL);
+						ctx.stroke();
+						ctx.fillStyle = col;
+						ctx.fillRect(x - bodyW / 2, Math.min(yO, yC), bodyW, Math.max(1, Math.abs(yC - yO)));
 					});
-					ctx.strokeStyle = positive ? "#3BD671" : "#FF5C63";
-					ctx.lineWidth = 1.8;
-					ctx.stroke();
 				}
 
 				function renderAll() {
@@ -1747,6 +1952,7 @@
 					renderDetail();
 					renderAccountSwitcher();
 					renderDashboard();
+					updateAgentPanel();
 					saveState();
 				}
 
@@ -2000,7 +2206,9 @@
 				var agentsBackdrop = document.getElementById("agentsBackdrop");
 				var agentsPanel = document.getElementById("agentsPanel");
 				var agChart = document.getElementById("agChart");
-				var agAccountList = document.getElementById("agAccountList");
+				var agAccountList = document.getElementById("agAgentsList");
+				var agHumansList = document.getElementById("agHumansList");
+				var agAccountCount = document.getElementById("agAccountCount");
 				var agFeed = document.getElementById("agFeed");
 				var netWorthHistory = []; // rolling combined net worth
 				var NW_HIST_CAP = 80;
@@ -2084,43 +2292,63 @@
 				}
 
 				function renderAccountList() {
-					if (!agAccountList) return;
-					agAccountList.innerHTML = "";
-					// group accounts by owner: each human card, followed by its linked agents
-					var humans = humanAccountIds().sort(function (x, y) {
-						return x === USER_ACCOUNT ? -1 : y === USER_ACCOUNT ? 1 : x < y ? -1 : 1;
-					});
-					humans.forEach(function (hid) {
-						var ownerCard = buildAccountCard(accounts[hid]);
-						if (!ownerCard) return;
-						var agents = Object.keys(accounts).filter(function (id) {
-							return accounts[id].kind === "agent" && accounts[id].owner === hid;
+					if (!agHumansList && !agAccountList) return;
+					var humanCount = 0,
+						agentCount = 0;
+					if (agAccountCount) {
+						Object.keys(accounts).forEach(function (id) {
+							if (accounts[id].kind === "agent") agentCount++;
+							else humanCount++;
 						});
-						if (agents.length) {
-							var hdr = document.createElement("div");
-							hdr.className = "owner-group";
-							var hdrRow = document.createElement("div");
-							hdrRow.className = "owner-row";
-							hdrRow.innerHTML =
-								'<span class="dot" style="background:' +
-								accounts[hid].color +
-								'"></span>' +
-								'<span class="oname">' +
-								escapeHtml(accounts[hid].name) +
-								"</span>" +
-								'<span class="ocount">' +
-								agents.length +
-								(agents.length === 1 ? " agent" : " agents") +
-								"</span>";
-							hdr.appendChild(hdrRow);
-							agAccountList.appendChild(hdr);
+						agAccountCount.textContent =
+							humanCount +
+							" human" +
+							(humanCount === 1 ? "" : "s") +
+							" · " +
+							agentCount +
+							" agent" +
+							(agentCount === 1 ? "" : "s");
+					}
+					if (agHumansList) {
+						agHumansList.innerHTML = "";
+						var humans = humanAccountIds().sort(function (x, y) {
+							return x === USER_ACCOUNT
+								? -1
+								: y === USER_ACCOUNT
+									? 1
+									: x < y
+										? -1
+										: 1;
+						});
+						humans.forEach(function (hid) {
+							var card = buildAccountCard(accounts[hid]);
+							if (card) agHumansList.appendChild(card);
+						});
+						if (!humans.length) {
+							agHumansList.innerHTML =
+								'<div class="empty">No human accounts.</div>';
 						}
-						agAccountList.appendChild(ownerCard);
+					}
+					if (agAccountList) {
+						agAccountList.innerHTML = "";
+						var agents = Object.keys(accounts)
+							.filter(function (id) {
+								return accounts[id].kind === "agent";
+							})
+							.sort(function (x, y) {
+								var ox = accounts[x].owner || "",
+									oy = accounts[y].owner || "";
+								return ox < oy ? -1 : ox > oy ? 1 : x < y ? -1 : 1;
+							});
 						agents.forEach(function (aid) {
 							var acard = buildAccountCard(accounts[aid]);
 							if (acard) agAccountList.appendChild(acard);
 						});
-					});
+						if (!agents.length) {
+							agAccountList.innerHTML =
+								'<div class="empty">No agents yet. Create one with "+ new".</div>';
+						}
+					}
 				}
 
 				function buildAccountCard(a) {
@@ -2147,7 +2375,10 @@
 						"</span>" +
 						'<span class="id">' +
 						escapeHtml(id) +
-						(a.kind === "agent" ? " · agent" : "") +
+						(a.kind === "agent"
+							? " · agent · under " +
+								escapeHtml(a.owner && a.owner !== id ? a.owner : USER_ACCOUNT)
+							: "") +
 						"</span>" +
 						"</div>" +
 						'<div class="row"><span class="k">Net worth</span><span>' +
@@ -2727,18 +2958,16 @@
 		</script>
 
 		<!--
-			Example agent (enabled): local Ollama (qwen3:8b-Q4_K_M) trades through
-			window.paperfloor. It runs in THIS browser and talks to your local Ollama.
-			On GitHub Pages, Chrome's Private Network Access blocks direct
-			browser->localhost, so run the local proxy and the agent falls back to it:
+			Example agent (enabled, NOT auto-started): local Ollama (qwen3:8b-Q4_K_M)
+			trades through window.paperfloor. It runs in THIS browser and talks to
+			your local Ollama. On GitHub Pages, Chrome's Private Network Access blocks
+			direct browser->localhost, so run the local proxy and the agent falls back
+			to it:
 			  node examples/ollama-proxy.js
-			Disable auto-start by deleting the PF_QWEN_AUTOSTART line below.
-			Controls: qwenAgent.start() / stop() / status() / runOnce()
+			The AGENT panel (bottom-right, shown when an agent desk is active) has
+			Start / Stop / Run once controls.
 			See examples/qwen3-agent.js and API.md.
 		-->
-		<script>
-			window.PF_QWEN_AUTOSTART = true;
-		</script>
 		<script src="examples/qwen3-agent.js" defer></script>
 	</body>
 </html>

@@ -44,7 +44,7 @@
     agentName: "Qwen3 8B",
     cash: 50000,
     owner: "user",
-    intervalMs: 45000,
+    intervalMs: 10000,
     numPredict: 220,
     temperature: 0.2,
     historyDepth: 8,
@@ -147,6 +147,7 @@
       Math.round(CONFIG.maxAllocationPct * 100) + "% of net worth in a single trade.",
     );
     lines.push("- A SELL must not exceed the quantity you currently hold.");
+    lines.push("- Remember to sell; don't just let stocks in hold stay there, but dont sell if stock is clearly good.");
     lines.push("- Only use symbols listed in the market snapshot below.");
     lines.push("- HOLD when nothing is clearly good.");
     lines.push("");

@@ -228,6 +228,61 @@ index.html#/api/getQuote?symbol=AAPL&raw=1
 
 ---
 
+## Example agent: Qwen3 8B via local Ollama
+
+`examples/qwen3-agent.js` is a self-contained agent that decides and executes
+trades through `window.paperfloor`, running on a **local** Ollama model
+(`qwen3:8b-Q4_K_M`). No API keys, no cloud.
+
+Setup:
+
+```bash
+ollama list                     # confirm qwen3:8b-Q4_K_M is present
+npx serve .                     # serve the folder over http://localhost (CORS)
+```
+
+Load the agent after the app script (or paste its contents into the console):
+
+```html
+<script src="examples/qwen3-agent.js" defer></script>
+```
+
+Then, from the page console:
+
+```js
+qwenAgent.start()               // decide + trade every ~45s
+qwenAgent.stop()
+qwenAgent.runOnce()             // single decision now
+qwenAgent.status()              // running flag, last decision, log tail
+```
+
+Preload overrides (set before the script loads):
+
+```js
+window.PF_QWEN_CONFIG = { agentId: "qwen3", cash: 100000, intervalMs: 60000 };
+window.PF_QWEN_AUTOSTART = true;   // start trading when the page loads
+```
+
+Behavior:
+
+- Creates its agent account (`kind:"agent"`, `owner:"user"`) on first run if missing.
+- Each cycle sends quotes, cash, net worth, holdings, and recent trades to the
+  model and demands a strict JSON decision
+  (`{"action":"buy"|"sell"|"hold","symbol":"...","qty":int,"reason":"..."}`).
+- `think:false` keeps Qwen3 from emitting reasoning tokens, so output stays fast
+  and clean; decisions are validated (known symbol, integer qty, trade caps)
+  before execution.
+- Buy size is capped at `maxAllocationPct` of net worth; sells can't exceed
+  holdings. Rejected trades are logged back so the next cycle sees them.
+- Final state lives on the account like any other trade; view it with
+  `#/api/getTradeHistory?account=qwen3&raw=1`.
+
+CORS notes: Ollama allows browser requests from `http://localhost` origins by
+default. If you open the app as `file://` or from a remote host, restart Ollama
+with `OLLAMA_ORIGINS=*`.
+
+---
+
 ## Notes & caveats
 
 - State is stored in `localStorage` (`paperfloor_state_v2`) and survives reloads.

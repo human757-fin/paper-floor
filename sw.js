@@ -1,5 +1,11 @@
-const CACHE = "paperfloor-v2";
-const ASSETS = ["./index.html", "./manifest.json", "./icon.svg"];
+const CACHE = "paperfloor-v3";
+const ASSETS = [
+  "./index.html",
+  "./manifest.json",
+  "./icon.svg",
+  "./examples/qwen3-agent.js",
+  "./examples/ollama-proxy.js",
+];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
@@ -16,7 +22,12 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return;
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+    caches.match(req).then((cached) => cached || fetch(req))
   );
 });

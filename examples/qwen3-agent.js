@@ -7,12 +7,14 @@
 * Requirements
  *   - Ollama running locally (default http://localhost:11434)
  *   - Model tag: qwen3:8b-Q4_K_M   (check with: ollama list)
- *   - Ollama must allow the page's origin (CORS). Localhost origins work out of
- *     the box; for a page served from GitHub Pages (or a custom domain) allowlist
- *     the origin and restart Ollama:
- *         setx OLLAMA_ORIGINS "https://human757-fin.github.io"
- *     (or OLLAMA_ORIGINS="*" to allow anything; custom-domain users put their
- *     own origin there). Then fully quit and restart the Ollama app.
+ *   - Page opened over http (not file://). For GitHub Pages / custom domains,
+ *     Chrome's Private Network Access blocks the direct browser->localhost call
+ *     even with CORS allowlisted, so run the bundled proxy and the agent will
+ *     fall back to it automatically:
+ *         node examples/ollama-proxy.js     (listens on http://localhost:8765)
+ *     (You can also allowlist the origin in Ollama instead when serving the app
+ *     over a local http:// origin:
+ *         setx OLLAMA_ORIGINS "https://human757-fin.github.io"   # then restart Ollama)
  *
  * Loading
  *   Option A (recommended): deploy this file with the app (it already lives in
@@ -173,31 +175,51 @@
     return lines.join("\n");
   }
 
+  function askEndpoints() {
+    var eps = [CONFIG.endpoint];
+    var proxy = "http://localhost:8765/api/chat";
+    if (eps.indexOf(proxy) === -1) eps.push(proxy);
+    return eps;
+  }
+
   async function askOllama(prompt) {
     var t0 = Date.now();
-    var res = await fetch(CONFIG.endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: CONFIG.model,
-        think: false,
-        stream: false,
-        options: {
-          num_predict: CONFIG.numPredict,
-          temperature: CONFIG.temperature,
-        },
-        messages: [
-          { role: "system", content: "You return trading decisions as strict JSON." },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!res.ok) throw new Error("Ollama HTTP " + res.status);
-    var data = await res.json();
-    var text = (data && data.message && data.message.content) || "";
-    if (!text) throw new Error("Ollama returned no content");
-    log("info", "model answered in " + Math.round((Date.now() - t0) / 100) / 10 + "s");
-    return text;
+    var lastErr = null;
+    for (var i = 0; i < askEndpoints().length; i++) {
+      var ep = askEndpoints()[i];
+      try {
+        var res = await fetch(ep, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: CONFIG.model,
+            think: false,
+            stream: false,
+            options: {
+              num_predict: CONFIG.numPredict,
+              temperature: CONFIG.temperature,
+            },
+            messages: [
+              { role: "system", content: "You return trading decisions as strict JSON." },
+              { role: "user", content: prompt },
+            ],
+          }),
+        });
+        if (!res.ok) throw new Error("Ollama HTTP " + res.status + " via " + ep);
+        var data = await res.json();
+        var text = (data && data.message && data.message.content) || "";
+        if (!text) throw new Error("Ollama returned no content via " + ep);
+        log(
+          "info",
+          "model via " + (ep.indexOf("8765") >= 0 ? "proxy (localhost:8765)" : "Ollama (" + CONFIG.model + ")"),
+        );
+        log("info", "model answered in " + Math.round((Date.now() - t0) / 100) / 10 + "s");
+        return text;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error("no Ollama endpoint reachable");
   }
 
   function parseDecision(text) {
@@ -287,8 +309,10 @@
       }
     } catch (e) {
       log("err", (e && e.message) || String(e));
-      badge("Qwen3-agent: error - " + ((e && e.message) || e) +
-        "\nhint: Ollama reachable? Page served via http://localhost?");
+      badge(
+        "Qwen3-agent: error - " + ((e && e.message) || e) +
+        "\nhint: run 'node examples/ollama-proxy.js' on this machine, then reload.",
+      );
     }
   }
 

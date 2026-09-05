@@ -242,20 +242,30 @@ ollama list                     # confirm qwen3:8b-Q4_K_M is present
 
 Because the agent lives in your **browser**, "localhost" is the machine that
 runs the browser — the page can be hosted anywhere (GitHub Pages, a custom
-domain, a local server). Ollama only accepts browser requests from allowed
-origins, and by default only loopback (`http://localhost`, `http://127.0.0.1`)
-origins are allowed. If you open the app at `https://YOURNAME.github.io/paper-floor/`
-(or a custom domain), allowlist that exact origin and restart Ollama:
+domain, a local server). Two things gate a browser page reaching your local
+Ollama:
+
+1. **Private Network Access (Chrome)** — a page served from a *public* origin
+   (`https://human757-fin.github.io/...`) fetching `http://localhost` is
+   blocked unless the local server answers the preflight with
+   `Access-Control-Allow-Private-Network: true`. Ollama 0.33.x does not send
+   that header, so even with CORS allowlisted, the direct call dies with
+   "Failed to fetch".
+2. **CORS** — Ollama only accepts browser requests from allowed origins
+   (loopback by default).
+
+The bundled `examples/ollama-proxy.js` solves both: it's a zero-dependency
+local proxy at `http://localhost:8765` that forwards to Ollama and returns the
+missing headers. The agent automatically falls back to it when a direct call
+fails, so the only setup needed is running it:
 
 ```powershell
-setx OLLAMA_ORIGINS "https://human757-fin.github.io"
-# then fully quit and restart the Ollama tray app (it reads env vars at startup)
-# use * to allow any origin, or repeat the setx with your custom domain
+node examples/ollama-proxy.js
 ```
 
-> **Use the bare origin — no path.** The browser sends `Origin: https://human757-fin.github.io`
-> (the `/paper-floor/` path is never included). Verified on Ollama 0.33.3: the origin
-> form is allowed, the path form is rejected with 403.
+(Optional, only when the app itself is served over a *local* origin like
+`http://localhost:8080`: you can also skip the proxy and allowlist the origin
+in Ollama instead — loopback origins work out of the box.)
 
 (The `https:` page talking to `http://localhost` is fine — browsers exempt
 loopback addresses from mixed-content blocking.)
@@ -296,12 +306,11 @@ Behavior:
 - Final state lives on the account like any other trade; view it with
   `#/api/getTradeHistory?account=qwen3&raw=1`.
 
-CORS notes: by default Ollama only allows loopback origins — set `OLLAMA_ORIGINS`
-to your GitHub Pages / custom-domain origin and restart Ollama for any other
-origin. If you bump into Private Network Access warnings in Chrome (rare,
-only for public-origin pages hitting loopback), either serve the app from
-`http://localhost` instead or disable the block via
-`chrome://flags/#block-insecure-private-network-requests`.
+For local-origin setups the older approach also works: allowlist the page origin
+in Ollama (`setx OLLAMA_ORIGINS "https://human757-fin.github.io"` then fully
+restart the Ollama app) — the origin is the bare scheme+host form, never the
+path. On GitHub Pages use `examples/ollama-proxy.js` instead (see above), as
+Private Network Access blocks the direct call regardless of `OLLAMA_ORIGINS`.
 
 ---
 

@@ -2728,10 +2728,10 @@
 
 		<!--
 			Example agent (enabled): local Ollama (qwen3:8b-Q4_K_M) trades through
-			window.paperfloor. It runs in THIS browser and talks to your local Ollama
-			at http://localhost:11434. For GH Pages / custom domains, Ollama must
-			allow this origin - restart Ollama after setting:
-			  setx OLLAMA_ORIGINS "https://human757-fin.github.io"
+			window.paperfloor. It runs in THIS browser and talks to your local Ollama.
+			On GitHub Pages, Chrome's Private Network Access blocks direct
+			browser->localhost, so run the local proxy and the agent falls back to it:
+			  node examples/ollama-proxy.js
 			Disable auto-start by deleting the PF_QWEN_AUTOSTART line below.
 			Controls: qwenAgent.start() / stop() / status() / runOnce()
 			See examples/qwen3-agent.js and API.md.

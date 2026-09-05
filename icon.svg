@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0B0E11"/>
+  <rect x="24" y="24" width="464" height="464" rx="76" fill="none" stroke="#262D35" stroke-width="4"/>
+  <polyline points="96,340 176,260 232,308 296,196 344,236 416,150"
+    fill="none" stroke="#FFB63D" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="416" cy="150" r="16" fill="#FFB63D"/>
+  <text x="256" y="430" text-anchor="middle" font-family="monospace" font-size="46" fill="#4DD8C8" font-weight="700">PF</text>
+</svg>

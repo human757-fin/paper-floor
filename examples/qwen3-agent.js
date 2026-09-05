@@ -4,20 +4,22 @@
  * A self-contained example trading agent that decides and executes trades
  * through the Paper Floor API (window.paperfloor) using a LOCAL Ollama model.
  *
- * Requirements
+* Requirements
  *   - Ollama running locally (default http://localhost:11434)
  *   - Model tag: qwen3:8b-Q4_K_M   (check with: ollama list)
- *   - Page served over http://localhost (not file://): Ollama allows browser
- *     (CORS) requests from localhost origins by default. If you load the app
- *     as a file:// or from a remote host, export OLLAMA_ORIGINS=* before
- *     starting Ollama.
+ *   - Ollama must allow the page's origin (CORS). Localhost origins work out of
+ *     the box; for a page served from GitHub Pages (or a custom domain) allowlist
+ *     the origin and restart Ollama:
+ *         setx OLLAMA_ORIGINS "https://human757-fin.github.io"
+ *     (or OLLAMA_ORIGINS="*" to allow anything; custom-domain users put their
+ *     own origin there). Then fully quit and restart the Ollama app.
  *
  * Loading
- *   Option A (recommended): serve this directory and add a script tag after
- *   the app script:
- *       npx serve .            (or:  python -m http.server 8080)
- *       <script src="examples/qwen3-agent.js" defer><\/script>
- *   Option B: paste the file's contents into the browser DevTools console.
+ *   Option A (recommended): deploy this file with the app (it already lives in
+ *   examples/) and uncomment the script tag under the app script in index.html,
+ *   or just load it from the DevTools console:
+ *       <script src="examples/qwen3-agent.js" defer></script>
+ *   Option B: paste this file's contents into the browser DevTools console.
  *
  * Starting / stopping (from the page console):
  *       window.qwenAgent.start()
@@ -39,6 +41,7 @@
     agentId: "qwen3",
     agentName: "Qwen3 8B",
     cash: 50000,
+    owner: "user",
     intervalMs: 45000,
     numPredict: 220,
     temperature: 0.2,
@@ -103,7 +106,7 @@
       id: CONFIG.agentId,
       name: CONFIG.agentName,
       cash: CONFIG.cash,
-      owner: "x",
+      owner: CONFIG.owner,
     });
     if (!res || res.ok === false) {
       log("err", "could not create agent: " + (res && res.error));
@@ -291,7 +294,12 @@
 
   function start() {
     if (handle) return;
-    if (!ticking) { ticking = true; runOnce().finally(function () { ticking = false; }); }
+    // grace period so the page finishes booting before the first decision
+    setTimeout(function () {
+      if (ticking) return;
+      ticking = true;
+      runOnce().finally(function () { ticking = false; });
+    }, 1000);
     handle = setInterval(function () {
       if (ticking) return; // don't stack runs if the model is slow
       ticking = true;

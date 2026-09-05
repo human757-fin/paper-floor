@@ -238,8 +238,27 @@ Setup:
 
 ```bash
 ollama list                     # confirm qwen3:8b-Q4_K_M is present
-npx serve .                     # serve the folder over http://localhost (CORS)
 ```
+
+Because the agent lives in your **browser**, "localhost" is the machine that
+runs the browser — the page can be hosted anywhere (GitHub Pages, a custom
+domain, a local server). Ollama only accepts browser requests from allowed
+origins, and by default only loopback (`http://localhost`, `http://127.0.0.1`)
+origins are allowed. If you open the app at `https://YOURNAME.github.io/paper-floor/`
+(or a custom domain), allowlist that exact origin and restart Ollama:
+
+```powershell
+setx OLLAMA_ORIGINS "https://human757-fin.github.io"
+# then fully quit and restart the Ollama tray app (it reads env vars at startup)
+# use * to allow any origin, or repeat the setx with your custom domain
+```
+
+> **Use the bare origin — no path.** The browser sends `Origin: https://human757-fin.github.io`
+> (the `/paper-floor/` path is never included). Verified on Ollama 0.33.3: the origin
+> form is allowed, the path form is rejected with 403.
+
+(The `https:` page talking to `http://localhost` is fine — browsers exempt
+loopback addresses from mixed-content blocking.)
 
 Load the agent after the app script (or paste its contents into the console):
 
@@ -277,9 +296,12 @@ Behavior:
 - Final state lives on the account like any other trade; view it with
   `#/api/getTradeHistory?account=qwen3&raw=1`.
 
-CORS notes: Ollama allows browser requests from `http://localhost` origins by
-default. If you open the app as `file://` or from a remote host, restart Ollama
-with `OLLAMA_ORIGINS=*`.
+CORS notes: by default Ollama only allows loopback origins — set `OLLAMA_ORIGINS`
+to your GitHub Pages / custom-domain origin and restart Ollama for any other
+origin. If you bump into Private Network Access warnings in Chrome (rare,
+only for public-origin pages hitting loopback), either serve the app from
+`http://localhost` instead or disable the block via
+`chrome://flags/#block-insecure-private-network-requests`.
 
 ---
 

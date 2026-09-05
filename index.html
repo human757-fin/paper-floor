@@ -2727,12 +2727,18 @@
 		</script>
 
 		<!--
-			Optional example agent — a local Ollama model (qwen3:8b-Q4_K_M) trades
-			through window.paperfloor. Served from http://localhost, CORS is fine.
-			Uncomment to load; then run `qwenAgent.start()` from the console, or set
-			window.PF_QWEN_AUTOSTART=true to begin on page load.
-			See examples/qwen3-agent.js for options and API.md for details.
-			--<script src="examples/qwen3-agent.js" defer></script>
+			Example agent (enabled): local Ollama (qwen3:8b-Q4_K_M) trades through
+			window.paperfloor. It runs in THIS browser and talks to your local Ollama
+			at http://localhost:11434. For GH Pages / custom domains, Ollama must
+			allow this origin - restart Ollama after setting:
+			  setx OLLAMA_ORIGINS "https://human757-fin.github.io"
+			Disable auto-start by deleting the PF_QWEN_AUTOSTART line below.
+			Controls: qwenAgent.start() / stop() / status() / runOnce()
+			See examples/qwen3-agent.js and API.md.
 		-->
+		<script>
+			window.PF_QWEN_AUTOSTART = true;
+		</script>
+		<script src="examples/qwen3-agent.js" defer></script>
 	</body>
 </html>

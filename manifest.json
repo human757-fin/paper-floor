@@ -1,0 +1,14 @@
+{
+  "name": "Paper Floor — Trading Desk",
+  "short_name": "PaperFloor",
+  "description": "A paper-trading LARP terminal that simulates real tickers with fake money.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B0E11",
+  "theme_color": "#0B0E11",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

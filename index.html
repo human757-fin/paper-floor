@@ -1159,6 +1159,37 @@
 					}
 				}
 
+				var SIM_MIN_PER_TICK = 5; // one sim tick advances the session clock 5 minutes
+				var DAY_START_MIN = 9.5 * 60; // 09:30
+				var DAY_END_MIN = 16 * 60; // 16:00
+				var simClock = DAY_START_MIN;
+				var marketTrend = 0; // shared rally / sell-off drift
+				var marketVol = 0.004; // shared market volatility
+
+				function clampNum(x, lo, hi) {
+					return x < lo ? lo : x > hi ? hi : x;
+				}
+
+				// rare idiosyncratic jumps (earnings / news style). Every name is armed
+				// with a random countdown; when it trips the stock gets a big one-off
+				// shove and then settles into a fresh quiet range.
+				function maybeEvent(st) {
+					if (st.eventCount > 0) {
+						st.eventCount--;
+						if (st.eventCount === 0) {
+							var mag =
+								Math.max(1.6, Math.abs(gaussian())) * st.idioVol * 7;
+							st.drift += gaussian() >= 0 ? mag : -mag;
+							st.volMul = Math.max(st.volMul, 1.6);
+							st.eventAt = Date.now();
+						}
+						return;
+					}
+					st.eventCount = 40 + Math.floor(Math.random() * 160);
+					st.drift = 0;
+					st.volMul = 1;
+				}
+
 				function initStocks() {
 					SEED.forEach(function (s) {
 						stocks[s.sym] = {
@@ -1167,21 +1198,83 @@
 							base: s.price,
 							price: s.price,
 							vol: s.vol,
+							// per-name personality: trendiness, market exposure, size of the
+							// idiosyncratic (own) moves vs. the shared market factor
+							beta: clampNum(0.75 + s.vol * 22, 0.7, 2.2),
+							idioVol: s.vol * 0.27,
+							drift: 0,
+							volMul: 1,
+							recent: s.price,
+							eventCount: 20 + Math.floor(Math.random() * 160),
+							eventAt: 0,
 							history: [s.price],
 							lastChangePct: 0,
 						};
 					});
+					marketTrend = 0;
+					marketVol = 0.001;
+					simClock = DAY_START_MIN;
 				}
 
 				function tickPrices() {
+					// ---- shared market regime ------------------------------------
+					// the whole tape walks on one "market" driver: a persistent trend
+					// (rallies / sell-offs that last a while) plus a volatile shock.
+					marketTrend = marketTrend * 0.93 + gaussian() * 0.0018;
+					if (Math.random() < 0.015) marketTrend += gaussian() * 0.007; // regime flip
+					marketTrend = clampNum(marketTrend, -0.004, 0.004);
+					marketVol = marketVol * 0.88 + 0.00045 + Math.abs(gaussian()) * 0.00015;
+					marketVol = clampNum(marketVol, 0.002, 0.0065);
+					var mShock = marketVol * gaussian();
+
+					// ---- session clock: markets are calmer midday, livelier near the
+					// open/close, and jump overnight --------------------------------
+					simClock += SIM_MIN_PER_TICK;
+					var overnight = false;
+					if (simClock >= DAY_END_MIN) {
+						simClock =
+							DAY_START_MIN +
+							((simClock - DAY_END_MIN) % (DAY_END_MIN - DAY_START_MIN));
+						overnight = true;
+					}
+					var progress =
+						(simClock - DAY_START_MIN) / (DAY_END_MIN - DAY_START_MIN);
+					var uShaped = Math.sqrt(1 + 0.85 * (1 - 4 * Math.pow(progress - 0.5, 2)));
+
 					Object.keys(stocks).forEach(function (sym) {
 						var st = stocks[sym];
-						var meanRevert = ((st.base - st.price) / st.base) * 0.02;
-						var shock = gaussian() * st.vol;
-						var pct = shock + meanRevert;
-						var next = Math.max(0.5, st.price * (1 + pct));
+
+						// idiosyncratic trend + volatility clustering
+						st.drift = st.drift * 0.88 + gaussian() * 0.0005;
+						st.drift = clampNum(st.drift, -0.0025, 0.0025);
+						st.volMul = clampNum(
+							st.volMul + gaussian() * 0.05 + (1 - st.volMul) * 0.02,
+							0.45,
+							2.4,
+						);
+
+						maybeEvent(st);
+
+						var overnightGap = 0;
+						if (overnight) {
+							overnightGap = gaussian() * st.idioVol * 1.4 + marketTrend * 2;
+						}
+
+						// gentle tug back toward the short-term mean keeps prices from
+						// running away while still letting real trends play out
+						var reversion = (-0.02 * (st.price - st.recent)) / st.price;
+
+						var ret =
+							overnightGap +
+							reversion +
+							st.drift +
+							mShock * st.beta * uShaped +
+							gaussian() * st.idioVol * st.volMul * uShaped;
+
+						var next = Math.max(0.5, st.price * (1 + ret));
 						st.lastChangePct = (next - st.price) / st.price;
 						st.price = next;
+						st.recent = st.recent * 0.96 + next * 0.04;
 						st.history.push(next);
 						if (st.history.length > HIST_LEN) st.history.shift();
 						recordCandle(sym, next);

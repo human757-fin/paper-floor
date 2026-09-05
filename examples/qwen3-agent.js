@@ -131,48 +131,76 @@
       }),
       cash: pf ? pf.cash : 0,
       netWorth: pf ? pf.netWorth : 0,
-      holdings: pf ? pf.holdings : [],
+      holdings: pf
+        ? pf.holdings.map(function (h) {
+            return {
+              sym: h.sym,
+              qty: h.qty,
+              avg: h.avg,
+              price: h.price,
+              pl: h.pl,
+              plPct: h.plPct,
+              weight: pf.netWorth ? (h.value / pf.netWorth) * 100 : 0,
+            };
+          })
+        : [],
       recentTrades: trades,
     };
   }
 
   function promptFor(ctx) {
     var lines = [];
-    lines.push("You are " + CONFIG.agentName + ", an autonomous paper-trading agent.");
-    lines.push("Rules: pick ONE action per turn. Return ONLY a JSON object and nothing else -");
-    lines.push('{"action":"buy"|"sell"|"hold","symbol":"AAPL","qty":3,"reason":"short explanation"}');
-    lines.push("- qty is a positive integer; stay small (<= " + CONFIG.maxTradeQty + ").");
-    lines.push(
-      "- A BUY must fit your cash with a 5% buffer and use at most " +
-      Math.round(CONFIG.maxAllocationPct * 100) + "% of net worth in a single trade.",
-    );
-    lines.push("- A SELL must not exceed the quantity you currently hold.");
-    lines.push("- Remember to sell; don't just let stocks in hold stay there, but dont sell if stock is clearly good.");
-    lines.push("- Only use symbols listed in the market snapshot below.");
-    lines.push("- HOLD when nothing is clearly good.");
+    lines.push("You are " + CONFIG.agentName + ", an autonomous paper-trading agent managing ONE account.");
+    lines.push("Return ONLY one JSON object and nothing else:");
+    lines.push('{"action":"buy"|"sell"|"hold","symbol":"NVDA","qty":3,"reason":"2-4 word reason"}');
+    lines.push("Constraints:");
+    lines.push("- qty is a positive integer; never more than " + CONFIG.maxTradeQty + ".");
+    lines.push("- A BUY must be affordable with a 5% cash buffer and never exceed " +
+      Math.round(CONFIG.maxAllocationPct * 100) + "% of net worth per trade.");
+    lines.push("- A SELL qty must not exceed what you hold; you may sell any quantity or all shares.");
+    lines.push("- Only symbols in the market snapshot may be traded.");
     lines.push("");
-    lines.push("Market snapshot (as of " + ctx.asof + "):");
+    lines.push("Decision rules - APPLY EVERY TURN:");
+    lines.push("1. Rank your holdings by P/L and decide for EVERY holding, not just the first one.");
+    lines.push("2. SELL all or part of a position to LOCK PROFITS when its P/L is +12% or better.");
+    lines.push("3. SELL to CUT LOSSES when a position is -8% or worse, or when it is falling hard.");
+    lines.push("4. SELL when a position has grown past " + Math.round(CONFIG.maxAllocationPct * 100) +
+      "% of net worth (rebalance back toward ~15%).");
+    lines.push("5. Only BUY when you have cash and a symbol is clearly outperforming the others.");
+    lines.push("6. If nothing qualifies, HOLD. Never invent symbols or trades.");
+    lines.push("You are a disciplined trader: taking profit and cutting losses are normal actions.");
+    lines.push("");
+    lines.push("Market snapshot (change today):");
     ctx.quotes.forEach(function (q) {
       lines.push(
-        q.sym + " " + q.name + " $" + q.price +
+        "  " + q.sym + " " + q.name + " $" + q.price +
         " (" + (q.change >= 0 ? "+" : "") + q.change + "%)",
       );
     });
     lines.push("");
     lines.push("Your cash: $" + Math.round(ctx.cash * 100) / 100);
-    lines.push("Your net worth: $" + Math.round(ctx.netWorth * 100) / 100);
-    lines.push("Current holdings: " + (ctx.holdings.length
-      ? ctx.holdings.map(function (h) { return h.qty + " " + h.sym + " @ avg $" + h.avg; }).join("; ")
-      : "none"));
+    lines.push("Net worth: $" + Math.round(ctx.netWorth * 100) / 100);
+    lines.push("Holdings (cost basis, P/L, position weight):");
+    if (ctx.holdings.length) {
+      ctx.holdings.forEach(function (h) {
+        lines.push(
+          "  " + h.sym + " x" + h.qty + " @ avg $" + h.avg.toFixed(2) +
+          " -> $" + h.price.toFixed(2) + " (P/L " +
+          (h.pl >= 0 ? "+" : "") + h.plPct.toFixed(1) + "% " +
+          (h.pl >= 0 ? "+$" : "-$") + Math.abs(h.pl).toFixed(0) +
+          ", " + h.weight.toFixed(1) + "% of net worth)",
+        );
+      });
+    } else {
+      lines.push("  none");
+    }
     if (ctx.recentTrades.length) {
       lines.push("Recent trades: " + ctx.recentTrades.map(function (t) {
-        return t.side + " " + t.qty + " " + t.sym + " @ $" + t.price;
+        return t.side + " " + t.qty + " " + t.sym + " @ $" + t.price.toFixed(2);
       }).join(" | "));
-    } else {
-      lines.push("Recent trades: none yet");
     }
     lines.push("");
-    lines.push("Decide now. JSON only:");
+    lines.push("Decision (JSON only):");
     return lines.join("\n");
   }
 
@@ -244,7 +272,17 @@
     ctx.quotes.forEach(function (q) { have[q.sym] = true; });
     if (!have[d.symbol]) throw new Error("model picked unknown symbol " + d.symbol);
     if (!(d.qty > 0)) throw new Error("qty must be a positive integer");
-    if (d.qty > CONFIG.maxTradeQty) {
+    if (d.action === "sell") {
+      var held = 0;
+      (ctx.holdings || []).forEach(function (h) {
+        if (h.sym === d.symbol) held = h.qty;
+      });
+      if (d.qty > held) {
+        d.qty = held;
+        d.reason = (d.reason || "") + " [qty capped to held]";
+      }
+      if (held <= 0) throw new Error("model tried to sell " + d.symbol + " but holds 0");
+    } else if (d.qty > CONFIG.maxTradeQty) {
       d.qty = CONFIG.maxTradeQty;
       d.reason = (d.reason || "") + " [qty capped]";
     }

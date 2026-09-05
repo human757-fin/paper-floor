@@ -416,6 +416,45 @@
 				display: block;
 			}
 
+			/* ---------- api url overlay ---------- */
+			.api-overlay {
+				position: fixed;
+				top: 0;
+				right: 0;
+				left: 0;
+				z-index: 150;
+				background: rgba(4, 6, 8, 0.96);
+				border-bottom: 1px solid var(--line);
+				padding: 14px 18px;
+				font-family: var(--font);
+				font-size: 12px;
+				max-height: 46vh;
+				overflow: auto;
+			}
+			.api-overlay .api-head {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 8px;
+			}
+			.api-overlay .api-head .t {
+				font-size: 10px;
+				color: var(--dim);
+				letter-spacing: 0.1em;
+			}
+			.api-overlay pre {
+				margin: 0;
+				white-space: pre-wrap;
+				word-break: break-word;
+				color: var(--cyan);
+			}
+			.api-overlay .ok {
+				color: var(--up);
+			}
+			.api-overlay .fail {
+				color: var(--down);
+			}
+
 			/* toast */
 			.toast-wrap {
 				position: fixed;
@@ -587,6 +626,43 @@
 				height: 10px;
 				border-radius: 50%;
 				flex: 0 0 auto;
+			}
+			.acct-card.agent-card {
+				border-style: dashed;
+				margin-left: 2px;
+			}
+			.acct-card.agent-card .nm {
+				font-weight: 500;
+			}
+			.owner-group {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+			}
+			.owner-row {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 10px;
+				color: var(--dim);
+				letter-spacing: 0.08em;
+				border-bottom: 1px solid var(--line);
+				padding-bottom: 6px;
+			}
+			.owner-row .dot {
+				width: 9px;
+				height: 9px;
+				border-radius: 50%;
+				flex: 0 0 auto;
+			}
+			.owner-row .oname {
+				font-weight: 700;
+				letter-spacing: 0.04em;
+				color: var(--ink);
+				flex: 1;
+			}
+			.owner-row .ocount {
+				font-size: 9.5px;
 			}
 			.acct-card .nm {
 				font-weight: 700;
@@ -903,6 +979,16 @@
 					<div class="ag-create" id="agCreateForm" style="display: none">
 						<input id="agIdInput" placeholder="id (e.g. alpha)" />
 						<input id="agNameInput" placeholder="name (optional)" />
+						<select id="agKindSelect" title="Account type">
+							<option value="human">HUMAN account</option>
+							<option value="agent">AGENT linked to human</option>
+						</select>
+						<select
+							id="agOwnerSelect"
+							title="Agent owned by"
+							placeholder="owned by"
+							style="display: none"
+						></select>
 						<select id="agCashSelect" title="Starting cash">
 							<option value="100000">$100,000</option>
 							<option value="10000">$10,000</option>
@@ -923,6 +1009,14 @@
 				</div>
 			</div>
 		</aside>
+
+		<div class="api-overlay" id="apiOverlay" style="display: none">
+					<div class="api-head">
+						<span class="t" id="apiHeadTitle">API :: —</span>
+						<button class="ghost" id="apiCloseBtn">✕</button>
+					</div>
+					<pre id="apiPre"></pre>
+				</div>
 
 		<div class="toast-wrap" id="toastWrap"></div>
 
@@ -1085,6 +1179,10 @@
 							updateFeedBadge();
 						}
 						renderAll();
+						if (rawApiMode) {
+							// keep the JSON body intact; only persist state
+							document.body.textContent = JSON.stringify(window.__pfLastResponse || {});
+						}
 						pubsub.emit("price:ticked", SEED.map(function (s) {
 							return getQuote(s.sym);
 						}));
@@ -1093,9 +1191,10 @@
 				}
 
 				// ---------- accounts ----------
-				// accounts: { id -> {id, name, cash, holdings, trades, color, status} }
+				// accounts: { id -> {id, name, cash, holdings, trades, color, status, kind, owner} }
 				// holdings:     sym -> {qty, avg}
 				// trades:       {time, sym, side, qty, price, realizedPnl}
+				// kind:  "human" (owner === id) or "agent" (owner = a human account id)
 				var accounts = {};
 				var activeAccount = USER_ACCOUNT;
 				var usedColors = {};
@@ -1110,6 +1209,11 @@
 					return ACCOUNT_COLORS[0];
 				}
 
+				function isHumanAccount(id) {
+					var a = accounts[id];
+					return !!a && (a.kind || "human") !== "agent";
+				}
+
 				function createAccount(id, opts) {
 					opts = opts || {};
 					var color = opts.color || nextColor();
@@ -1118,6 +1222,15 @@
 						typeof opts.cash === "number" && opts.cash >= 0
 							? opts.cash
 							: STARTING_CASH;
+					var kind = opts.kind === "agent" ? "agent" : "human";
+					// agents link to a human account (their owner); humans own themselves
+					var owner =
+						typeof opts.owner === "string" && opts.owner
+							? opts.owner
+							: kind === "agent"
+								? USER_ACCOUNT
+								: id;
+					if (kind === "agent" && !isHumanAccount(owner)) owner = USER_ACCOUNT;
 					accounts[id] = {
 						id: id,
 						name: opts.name || id,
@@ -1127,6 +1240,8 @@
 						trades: [],
 						color: color,
 						status: opts.status || "enabled",
+						kind: kind,
+						owner: owner,
 					};
 					pubsub.emit("account:created", { id: id, account: accounts[id] });
 					return accounts[id];
@@ -1137,7 +1252,13 @@
 						name: "Trader",
 						cash: STARTING_CASH,
 						status: "locked",
+						kind: "human",
+						owner: USER_ACCOUNT,
 					});
+				}
+
+				function humanAccountIds() {
+					return Object.keys(accounts).filter(isHumanAccount);
 				}
 
 				function setAccountColor(id, color) {
@@ -1186,7 +1307,12 @@
 										a.initialCash =
 											id === USER_ACCOUNT ? STARTING_CASH : a.cash || STARTING_CASH;
 									}
+									// backfill human/agent ownership for accounts saved before the concept existed
+									if (!a.kind) a.kind = "human";
+									if (typeof a.owner !== "string" || !a.owner) a.owner = id;
 								});
+								if (!isHumanAccount(USER_ACCOUNT))
+									Object.assign(accounts[USER_ACCOUNT], { kind: "human", owner: USER_ACCOUNT });
 								return;
 							}
 						}
@@ -1778,7 +1904,7 @@
 					} else {
 						priceLoopHandle = setInterval(function () {
 							tickPrices();
-							renderAll();
+							if (!rawApiMode) renderAll();
 						}, SIM_INTERVAL_MS);
 					}
 				}
@@ -1849,7 +1975,10 @@
 						var a = accounts[id];
 						var opt = document.createElement("option");
 						opt.value = id;
-						opt.textContent = a.name + (a.status === "disabled" ? " (off)" : "");
+						opt.textContent =
+							(a.kind === "agent" ? "▸ " : "") +
+							a.name +
+							(a.status === "disabled" ? " (off)" : "");
 						opt.style.color = a.color;
 						if (id === activeAccount) opt.selected = true;
 						accountSwitcher.appendChild(opt);
@@ -1957,104 +2086,140 @@
 				function renderAccountList() {
 					if (!agAccountList) return;
 					agAccountList.innerHTML = "";
-					Object.keys(accounts).forEach(function (id) {
-						var a = accounts[id];
-						var p = getPortfolio(id);
-						if (!p) return;
-						var base = a.initialCash || STARTING_CASH;
-						var del = p.netWorth - base;
-						var delCls = del >= 0 ? "pos" : "neg";
-						var card = document.createElement("div");
-						card.className = "acct-card";
-						card.innerHTML =
-							'<div class="top">' +
-							'<span class="dot" style="background:' +
-							a.color +
-							'"></span>' +
-							'<span class="nm">' +
-							escapeHtml(a.name) +
-							'</span>' +
-							'<span class="status-pill ' +
-							a.status +
-							'">' +
-							a.status +
-							"</span>" +
-							'<span class="id">' +
-							escapeHtml(id) +
-							"</span>" +
-							"</div>" +
-							'<div class="row"><span class="k">Net worth</span><span>' +
-							fmt(p.netWorth) +
-							"</span></div>" +
-							'<div class="row"><span class="k">Cash</span><span>' +
-							fmt(p.cash) +
-							"</span></div>" +
-							'<div class="row"><span class="k">P/L</span><span class="' +
-							delCls +
-							'">' +
-							(del >= 0 ? "+" : "") +
-							fmt(del) +
-							" (" +
-							fmtPct(base ? del / base : 0) +
-							")</span></div>" +
-							'<div class="row"><span class="k">Positions</span><span>' +
-							p.holdings.length +
-							"</span></div>";
-						var ctrl = document.createElement("div");
-						ctrl.className = "ctrl";
-						if (id !== USER_ACCOUNT) {
-							var statusBtn = document.createElement("button");
-							statusBtn.className = "ghost";
-							statusBtn.textContent =
-								a.status === "disabled" ? "Enable" : "Disable";
-							statusBtn.onclick = function () {
-								a.status = a.status === "disabled" ? "enabled" : "disabled";
-								saveState();
-								renderDashboard();
-								renderAll();
-							};
-							ctrl.appendChild(statusBtn);
-							var delBtn = document.createElement("button");
-							delBtn.className = "ghost";
-							delBtn.textContent = "Delete";
-							delBtn.style.color = "var(--down)";
-							delBtn.onclick = function () {
-								if (!confirm("Delete account '" + id + "'? This cannot be undone."))
-									return;
-								delete accounts[id];
-								delete usedColors[a.color];
-								if (activeAccount === id) activeAccount = USER_ACCOUNT;
-								saveState();
-								pubsub.emit("account:deleted", { id: id });
-								renderDashboard();
-								renderAll();
-							};
-							ctrl.appendChild(delBtn);
+					// group accounts by owner: each human card, followed by its linked agents
+					var humans = humanAccountIds().sort(function (x, y) {
+						return x === USER_ACCOUNT ? -1 : y === USER_ACCOUNT ? 1 : x < y ? -1 : 1;
+					});
+					humans.forEach(function (hid) {
+						var ownerCard = buildAccountCard(accounts[hid]);
+						if (!ownerCard) return;
+						var agents = Object.keys(accounts).filter(function (id) {
+							return accounts[id].kind === "agent" && accounts[id].owner === hid;
+						});
+						if (agents.length) {
+							var hdr = document.createElement("div");
+							hdr.className = "owner-group";
+							var hdrRow = document.createElement("div");
+							hdrRow.className = "owner-row";
+							hdrRow.innerHTML =
+								'<span class="dot" style="background:' +
+								accounts[hid].color +
+								'"></span>' +
+								'<span class="oname">' +
+								escapeHtml(accounts[hid].name) +
+								"</span>" +
+								'<span class="ocount">' +
+								agents.length +
+								(agents.length === 1 ? " agent" : " agents") +
+								"</span>";
+							hdr.appendChild(hdrRow);
+							agAccountList.appendChild(hdr);
 						}
-						var colorPick = document.createElement("input");
-						colorPick.type = "color";
-						colorPick.value = a.color;
-						colorPick.title = "Set account color";
-						colorPick.oninput = function () {
-							setAccountColor(id, this.value);
+						agAccountList.appendChild(ownerCard);
+						agents.forEach(function (aid) {
+							var acard = buildAccountCard(accounts[aid]);
+							if (acard) agAccountList.appendChild(acard);
+						});
+					});
+				}
+
+				function buildAccountCard(a) {
+					var id = a.id;
+					var p = getPortfolio(id);
+					if (!p) return null;
+					var base = a.initialCash || STARTING_CASH;
+					var del = p.netWorth - base;
+					var delCls = del >= 0 ? "pos" : "neg";
+					var card = document.createElement("div");
+					card.className = "acct-card" + (a.kind === "agent" ? " agent-card" : "");
+					card.innerHTML =
+						'<div class="top">' +
+						'<span class="dot" style="background:' +
+						a.color +
+						'"></span>' +
+						'<span class="nm">' +
+						escapeHtml(a.name) +
+						'</span>' +
+						'<span class="status-pill ' +
+						a.status +
+						'">' +
+						a.status +
+						"</span>" +
+						'<span class="id">' +
+						escapeHtml(id) +
+						(a.kind === "agent" ? " · agent" : "") +
+						"</span>" +
+						"</div>" +
+						'<div class="row"><span class="k">Net worth</span><span>' +
+						fmt(p.netWorth) +
+						"</span></div>" +
+						'<div class="row"><span class="k">Cash</span><span>' +
+						fmt(p.cash) +
+						"</span></div>" +
+						'<div class="row"><span class="k">P/L</span><span class="' +
+						delCls +
+						'">' +
+						(del >= 0 ? "+" : "") +
+						fmt(del) +
+						" (" +
+						fmtPct(base ? del / base : 0) +
+						")</span></div>" +
+						'<div class="row"><span class="k">Positions</span><span>' +
+						p.holdings.length +
+						"</span></div>";
+					var ctrl = document.createElement("div");
+					ctrl.className = "ctrl";
+					if (id !== USER_ACCOUNT) {
+						var statusBtn = document.createElement("button");
+						statusBtn.className = "ghost";
+						statusBtn.textContent = a.status === "disabled" ? "Enable" : "Disable";
+						statusBtn.onclick = function () {
+							a.status = a.status === "disabled" ? "enabled" : "disabled";
+							saveState();
 							renderDashboard();
-							renderAccountSwitcher();
-							saveState();
-						};
-						ctrl.appendChild(colorPick);
-						var activateBtn = document.createElement("button");
-						activateBtn.className = "ghost";
-						activateBtn.textContent = activeAccount === id ? "Active" : "Activate";
-						activateBtn.disabled = activeAccount === id;
-						activateBtn.onclick = function () {
-							activeAccount = id;
-							saveState();
 							renderAll();
 						};
-						ctrl.appendChild(activateBtn);
-						card.appendChild(ctrl);
-						agAccountList.appendChild(card);
-					});
+						ctrl.appendChild(statusBtn);
+						var delBtn = document.createElement("button");
+						delBtn.className = "ghost";
+						delBtn.textContent = "Delete";
+						delBtn.style.color = "var(--down)";
+						delBtn.onclick = function () {
+							if (!confirm("Delete account '" + id + "'? This cannot be undone."))
+								return;
+							delete accounts[id];
+							delete usedColors[a.color];
+							if (activeAccount === id) activeAccount = USER_ACCOUNT;
+							saveState();
+							pubsub.emit("account:deleted", { id: id });
+							renderDashboard();
+							renderAll();
+						};
+						ctrl.appendChild(delBtn);
+					}
+					var colorPick = document.createElement("input");
+					colorPick.type = "color";
+					colorPick.value = a.color;
+					colorPick.title = "Set account color";
+					colorPick.oninput = function () {
+						setAccountColor(id, this.value);
+						renderDashboard();
+						renderAccountSwitcher();
+						saveState();
+					};
+					ctrl.appendChild(colorPick);
+					var activateBtn = document.createElement("button");
+					activateBtn.className = "ghost";
+					activateBtn.textContent = activeAccount === id ? "Active" : "Activate";
+					activateBtn.disabled = activeAccount === id;
+					activateBtn.onclick = function () {
+						activeAccount = id;
+						saveState();
+						renderAll();
+					};
+					ctrl.appendChild(activateBtn);
+					card.appendChild(ctrl);
+					return card;
 				}
 
 				function renderAgentFeed() {
@@ -2062,16 +2227,17 @@
 					var rows = [];
 					var count = 0;
 					Object.keys(accounts).forEach(function (id) {
-						if (id === USER_ACCOUNT) return;
 						var a = accounts[id];
-						(a.trades || []).forEach(function (t) {
-							count++;
-							rows.push({
-								time: t.time,
-								account: a,
-								trade: t,
+						if (a.kind === "agent") {
+							(a.trades || []).forEach(function (t) {
+								count++;
+								rows.push({
+									time: t.time,
+									account: a,
+									trade: t,
+								});
 							});
-						});
+						}
 					});
 					rows.sort(function (x, y) {
 						return y.time - x.time;
@@ -2146,10 +2312,31 @@
 				document.getElementById("agentsClose").onclick = closeAgents;
 				agentsBackdrop.addEventListener("click", closeAgents);
 
+				function fillOwnerSelect() {
+					var sel = document.getElementById("agOwnerSelect");
+					if (!sel) return;
+					sel.innerHTML = "";
+					humanAccountIds().forEach(function (id) {
+						var a = accounts[id];
+						var opt = document.createElement("option");
+						opt.value = id;
+						opt.textContent = a.name + " (" + id + ")";
+						if (id === USER_ACCOUNT) opt.selected = true;
+						sel.appendChild(opt);
+					});
+				}
+
+				document.getElementById("agKindSelect").onchange = function () {
+					var isAgent = this.value === "agent";
+					document.getElementById("agOwnerSelect").style.display = isAgent
+						? "flex"
+						: "none";
+				};
 				document.getElementById("agNewToggle").onclick = function () {
 					var form = document.getElementById("agCreateForm");
 					form.style.display = form.style.display === "none" ? "flex" : "none";
 					document.getElementById("agCreateErr").textContent = "";
+					fillOwnerSelect();
 				};
 				document.getElementById("agCreateBtn").onclick = function () {
 					var id = document
@@ -2158,6 +2345,8 @@
 						.replace(/[^a-zA-Z0-9_-]/g, "")
 						.toLowerCase();
 					var name = document.getElementById("agNameInput").value.trim();
+					var kind = document.getElementById("agKindSelect").value;
+					var owner = document.getElementById("agOwnerSelect").value || USER_ACCOUNT;
 					var cash = parseInt(
 						document.getElementById("agCashSelect").value,
 						10,
@@ -2175,13 +2364,19 @@
 						errEl.textContent = "Account limit reached (" + MAX_ACCOUNTS + ").";
 						return;
 					}
-					createAccount(id, { name: name || id, cash: cash });
+					createAccount(id, { name: name || id, cash: cash, kind: kind, owner: owner });
 					saveState();
 					document.getElementById("agIdInput").value = "";
 					document.getElementById("agNameInput").value = "";
 					errEl.textContent = "";
 					document.getElementById("agNewToggle").click();
-					toast("Account '" + id + "' created.");
+					toast(
+						(kind === "agent" ? "Agent '" : "Account '") +
+							id +
+							"' created" +
+							(kind === "agent" ? " under " + owner : "") +
+							".",
+					);
 					renderDashboard();
 					renderAccountSwitcher();
 				};
@@ -2193,7 +2388,12 @@
 							return getQuote(s.sym);
 						}).filter(Boolean);
 					},
-					getQuote: getQuote,
+					getQuote: function (options) {
+						var sym = typeof options === "string" ? options : (options && options.symbol) || "";
+						var q = getQuote(sym);
+						if (!q) return { ok: false, error: "Unknown symbol: " + sym };
+						return q;
+					},
 					getPrices: function () {
 						return SEED.map(function (s) {
 							return getQuote(s.sym);
@@ -2205,15 +2405,26 @@
 						if (accounts[options.id]) return errResult("Account id already exists");
 						if (Object.keys(accounts).length >= MAX_ACCOUNTS)
 							return errResult("Account limit reached (" + MAX_ACCOUNTS + ")");
+						if (options.owner && !isHumanAccount(options.owner))
+							return errResult("owner must be a human account");
 						var acct = createAccount(options.id, {
 							name: options.name,
 							cash: options.cash,
 							status: options.status,
+							kind: options.kind,
+							owner: options.owner,
 						});
 						saveState();
 						renderDashboard();
 						renderAccountSwitcher();
 						return { ok: true, account: acct, error: null };
+					},
+					createAgent: function (options) {
+						options = options || {};
+						options.kind = "agent";
+						// agents link to a human account; default to the main user
+						if (!options.owner) options.owner = USER_ACCOUNT;
+						return window.paperfloor.createAccount(options);
 					},
 					deleteAccount: function (options) {
 						options = options || {};
@@ -2231,16 +2442,35 @@
 						renderAll();
 						return { ok: true, error: null };
 					},
-					getAccounts: function () {
-						return Object.keys(accounts).map(function (id) {
+					getAccounts: function (options) {
+						options = options || {};
+						var list = Object.keys(accounts)
+							.filter(function (id) {
+								if (options.owner) return accounts[id].owner === options.owner;
+								return true;
+							})
+							.map(function (id) {
+								return accountSummary(id);
+							});
+						return list;
+					},
+					getOwners: function () {
+						return humanAccountIds().map(function (id) {
 							var a = accounts[id];
+							var agents = Object.keys(accounts).filter(function (x) {
+								return accounts[x].kind === "agent" && accounts[x].owner === id;
+							});
+							var nw = combinedAccountNW(id);
+							var agentNW = agents.reduce(function (sum, x) {
+								return sum + combinedAccountNW(x);
+							}, 0);
 							return {
 								id: id,
 								name: a.name,
-								cash: a.cash,
 								color: a.color,
-								status: a.status,
-								netWorth: combinedAccountNW(id),
+								agents: agents.length,
+								netWorth: nw,
+								combinedNetWorth: nw + agentNW,
 							};
 						});
 					},
@@ -2316,7 +2546,7 @@
 						renderAll();
 						return { ok: true, error: null };
 					},
-					version: "1.0.0",
+					version: "1.1.0",
 				};
 
 				function combinedAccountNW(id) {
@@ -2328,6 +2558,141 @@
 							v += a.holdings[sym].qty * stocks[sym].price;
 					});
 					return v;
+				}
+
+				function accountSummary(id) {
+					var a = accounts[id];
+					if (!a) return null;
+					var p = getPortfolio(id);
+					return {
+						id: id,
+						name: a.name,
+						cash: a.cash,
+						color: a.color,
+						status: a.status,
+						kind: a.kind,
+						owner: a.owner || id,
+						ownerName: a.owner && accounts[a.owner] ? accounts[a.owner].name : null,
+						netWorth: combinedAccountNW(id),
+						holdingsCount: p ? p.holdings.length : 0,
+						tradesCount: (a.trades || []).length,
+					};
+				}
+
+				// ---------- URL endpoint (#/api/ACTION?k=v&k=v) ----------
+				// Callable from a browser address bar, link, or headless fetch:
+				//   ./index.html#/api/getQuotes
+				//   ./index.html#/api/buy?account=alpha&symbol=AAPL&qty=10
+				//   ./index.html#/api/createAgent?id=alpha&owner=user&cash=10000
+				// Add &raw=1 to replace the whole page with the JSON body (scrape-friendly).
+				var API_OVERLAY_MS = 5000;
+				var rawApiMode = false;
+
+				function parseApiHash() {
+					var m = /^#\/api\/([A-Za-z0-9_]+)(?:$|\?(.*))/.exec(
+						location.hash,
+					);
+					if (!m) return null;
+					var action = m[1];
+					var params = {};
+					var q = m[2] || "";
+					q.split("&").forEach(function (kv) {
+						if (!kv) return;
+						var eq = kv.indexOf("=");
+						var k = decodeURIComponent(eq >= 0 ? kv.slice(0, eq) : kv).trim();
+						var v = eq >= 0 ? decodeURIComponent(kv.slice(eq + 1)) : "";
+						if (k) params[k] = v;
+					});
+					return { action: action, params: params };
+				}
+
+				function coerceParam(key, val) {
+					if (val === "true" || val === "1" || val === "yes") return true;
+					if (val === "false" || val === "0" || val === "no" || val === "")
+						return false;
+					if (
+						key === "qty" ||
+						key === "cash" ||
+						key === "share" ||
+						key === "limit"
+					) {
+						var n = Number(val);
+						return isNaN(n) ? val : n;
+					}
+					return val;
+				}
+
+				function showApiResponse(res, action, prettyRaw) {
+					var overlay = document.getElementById("apiOverlay");
+					var title = document.getElementById("apiHeadTitle");
+					var pre = document.getElementById("apiPre");
+					if (overlay && title && pre) {
+						var ok = res && res.ok !== false;
+						overlay.style.display = "block";
+						title.className = ok ? "t ok" : "t fail";
+						title.textContent = "API :: " + action + (ok ? " ✓" : " ✗");
+						pre.textContent = JSON.stringify(res, null, 2);
+					}
+					// raw=1 → page body becomes the JSON so headless tools get clean output
+					if (prettyRaw && "body" in document) {
+						rawApiMode = true;
+						document.body.textContent = JSON.stringify(res);
+					}
+					window.__pfLastResponse = res;
+					clearTimeout(showApiResponse._t);
+					showApiResponse._t = setTimeout(function () {
+						if (overlay) overlay.style.display = "none";
+					}, API_OVERLAY_MS);
+				}
+
+				function handleApiUrl() {
+					var req = parseApiHash();
+					if (!req) return;
+					var action = req.action;
+					var p = req.params;
+					var raw = coerceParam("raw", p.raw === undefined ? "" : p.raw) === true;
+					var fn = window.paperfloor[action];
+					var finish = function (res) {
+						showApiResponse(res, action, raw);
+						pubsub.emit("api:call", { action: action, params: p, result: res });
+						// clear the hash after handling so refresh/back doesn't re-fire trades
+						try {
+							history.replaceState(null, "", location.pathname + location.search);
+						} catch (e) {
+							location.hash = "";
+						}
+					};
+					if (typeof fn !== "function") {
+						if (action in window.paperfloor) {
+							finish({ ok: true, action: action, result: fn });
+						} else {
+							finish({
+								ok: false,
+								action: action,
+								error: "Unknown action: " + action,
+							});
+						}
+						return;
+					}
+					try {
+						var opts = {};
+						Object.keys(p).forEach(function (k) {
+							if (k === "raw") return;
+							opts[k] = coerceParam(k, p[k]);
+						});
+						var result = fn(opts);
+						finish(
+							result && typeof result === "object" && "ok" in result
+								? result
+								: { ok: true, action: action, result: result },
+						);
+					} catch (err) {
+						finish({
+							ok: false,
+							action: action,
+							error: String((err && err.message) || err),
+						});
+					}
 				}
 
 				function tickClock() {
@@ -2345,6 +2710,11 @@
 				setInterval(tickClock, 1000);
 				restartPriceLoop();
 				if (feed.live) fetchLiveQuotes();
+				handleApiUrl();
+				window.addEventListener("hashchange", handleApiUrl);
+				document.getElementById("apiCloseBtn").onclick = function () {
+					document.getElementById("apiOverlay").style.display = "none";
+				};
 				window.addEventListener("resize", function () {
 					renderDetail();
 					drawAgChart();
